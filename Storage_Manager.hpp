@@ -143,3 +143,6 @@ public:
     void syncOfflineData();
     void loadFromSQL();
 };
+
+const Person* getPersonById(std::string& personId);
+void castPersonByRole(const Person* person);
