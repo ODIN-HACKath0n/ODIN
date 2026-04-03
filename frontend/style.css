@@ -1,0 +1,278 @@
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-color: #C6D6E6;
+    background-image: url('./images/bgr_light.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.brand-logo {
+    position: absolute;
+    top: 18px;
+    left: 0px;
+    z-index: 10;
+}
+
+.brand-logo img {
+    width: 180px;
+    height: auto;
+}
+
+.top-controls {
+    position: absolute;
+    top: 31px;
+    right: 75px;
+    z-index: 10;
+    display: flex;
+    gap: 20px;
+    background: rgba(255, 255, 255, 0.49);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 10px 14px;
+    border-radius: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.control-pill {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    padding: 4px 10px;
+    height: 32px;
+    width: 60px;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.lang-switch {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+    /* Напівпрозорий білий для "EN" */
+    gap: 6px;
+}
+
+.lang-switch .active {
+    color: #ffffff;
+    /* Яскравий білий для активного "UA" */
+    font-weight: 700;
+}
+
+.lang-switch .separator {
+    font-weight: 300;
+    opacity: 0.4;
+    /* Ледь помітна рисочка */
+}
+
+/* --- ПЕРЕМИКАЧ ТЕМИ --- */
+.theme-switch {
+    gap: 10px;
+    padding: 4px 6px;
+    /* Тут трохи інші відступи через кружечок */
+}
+
+/* Місяць (неактивний) */
+.moon-icon {
+    color: rgba(255, 255, 255, 0.7);
+    margin-left: 4px;
+}
+
+/* Сонце (активне - у зеленому кружечку) */
+.active-sun {
+    background: #22C55E;
+    /* Наш фірмовий зелений */
+    border-radius: 50%;
+    /* Робимо ідеальний круг */
+    width: 26px;
+    height: 26px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+    /* Легке зелене світіння */
+}
+
+.active-sun svg {
+    color: #ffffff;
+    /* Біла іконка сонця */
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    width: 400px;
+    height: 500px;
+    padding: 45px 45px 16px 45px;   
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);    
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.login-card h2 {
+    color: rgba(11, 15, 26, 0.75);
+    font-size: 24px;
+    margin-top: 0;
+    margin-bottom: 34px;
+    font-weight: 700;
+}
+
+.input-group {
+    width: 310px;
+    margin-bottom: 24px;
+    text-align: right;
+}
+
+input {
+    width: 310px;
+    height: 52px;
+    padding: 15px 20px;
+    box-sizing: border-box;
+    border: 1px solid rgba(68, 138, 255, 0.2);
+    border-radius: 12px;
+    background: rgba(198, 214, 230, 0.26);
+    font-size: 16px;
+    font-weight: 700;
+    outline: none;
+    color: #94A3B8;
+    font-family: 'Montserrat', sans-serif;
+}
+
+input::placeholder {
+    color: #94A3B8;
+    opacity: 0.6;
+}
+
+.forgot-password {
+    display: inline-block;
+    margin-top: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 300;
+    color: rgba(22, 63, 131, 0.81);
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.forgot-password:hover {
+    color: rgba(68, 138, 255, 0.8);
+    text-decoration: underline;
+}
+
+.login-btn {
+    width: 310px;
+    height: 56px;
+    background: rgba(34, 197, 94, 0.8);
+    border: none;
+    border-radius: 12px;
+    box-sizing: border-box;
+    cursor: pointer;
+    margin-top: -10px;
+    color: #ffffff;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.5) !important;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    background: rgba(34, 197, 94, 1);
+    box-shadow: 0 10px 25px rgba(34, 197, 94, 0.5);
+}
+
+.google-btn {
+    width: 310px;
+    height: 56px;
+    margin: 15px auto 0 auto;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 12px;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: rgba(22, 63, 131, 0.91);
+    transition: all 0.3s ease;
+}
+
+.google-btn img {
+    width: 24px;
+    height: 24px;
+}
+
+ .google-btn:hover {
+    background: #E2E8F0;
+    transform: translateY(-2px);
+}
+
+.signup-link {
+    margin-top: 17px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 300;
+    color: rgba(22, 63, 131, 0.76);
+}
+
+.signup-link a {
+    color: #1AC35A;
+    font-weight: 300;
+    text-decoration: none;
+    margin-left: 3px;
+    transition: 0.3s;
+}
+
+.signup-link a:hover {
+    color: #16a34a;
+    text-decoration: underline;
+}
+
+.divider {
+    width: 356px;
+    height: 1px;
+    background: rgba(22, 63, 131, 0.19);
+    margin-top: 24px;
+    margin-bottom: 14px;
+}
+
+.secure-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 300;
+    color: rgba(22, 63, 131, 0.64);
+}
+
+.secure-text svg {
+    width: 15px;
+    height: 15px;
+    opacity: 0.8;
+}
+
+.secure-text svg path {
+    fill: rgba(22, 63, 131, 0.64);
+}
