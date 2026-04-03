@@ -9,6 +9,7 @@
 
 .page-wrapper {
   min-height: 100vh;
+  padding: 40px 0;
   background-color: #c6d6e6;
   background-image: url("/bgr_light.png");
   background-size: cover;
@@ -384,3 +385,16 @@ input::placeholder {
 .dark .secure-text path {
   fill: rgba(255, 255, 255, 0.3);
 } 
+
+/*-----------------------------*/
+.register-card {
+  height: auto;
+  padding: 35px 45px 15px 45px;}
+
+.register-card .input-group {
+  margin-bottom: 12px;
+}
+
+.register-card .login-btn {
+  margin-top: 8px;
+}

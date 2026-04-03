@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "./context/AppContext";
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 import "./App.css";
 
 export default function App() {
@@ -9,8 +10,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LoginPage />} />
-          {/* потім додаси сюди інші сторінки, наприклад: */}
-          {/* <Route path="/register" element={<RegisterPage />} /> */}
+          <Route path="/register" element={<RegisterPage />} />
         </Routes>
       </BrowserRouter>
     </AppProvider>
