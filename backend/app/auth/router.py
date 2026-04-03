@@ -1,62 +1,84 @@
+# backend/app/auth/router.py
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
+import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from database import database as db
+# Імпортуємо наш C++ рушій
+from database import db_engine
+import logistics_core
 
 router = APIRouter(prefix="/auth", tags=["Авторизація"])
 
-class UserAuthRequest(BaseModel):
+class UserRegistrationRequest(BaseModel):
+    name: str
+    email: str
+    phone: str
+    password: str
+    role: str
+
+class UserLogin(BaseModel):
     username: str
     password: str
-    posada: str
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
-def register(user: UserAuthRequest):
-    existing_user = db.get_user_by_username(user.username)
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Користувач з таким ім'ям вже існує."
-        )
-    
+@router.post("/login_user", status_code=status.HTTP_200_OK)
+def login_user(user: UserLogin):
+    # дістати користувача з бази
+    user = db_engine.get_user(user.username) | None # Повернути об'єкт користувача з паролем
+    if user and check_password_hash(UserLogin.password, user.password):
+        pass
+    else:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+
+
+@router.post("/register_user", status_code=status.HTTP_201_CREATED)
+def register_user(user: UserRegistrationRequest):
+    user_id = str(uuid.uuid4())
     hashed_password = generate_password_hash(user.password, method='pbkdf2:sha256')
-    
-    new_user = db.create_user(user.username, hashed_password)
-    
-    return {"message": "Реєстрація успішна!", "user_id": new_user["id"]}
 
+    existing_user = db_engine.get_user(user.username) | None
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User already exists")
 
-@router.post("/login", status_code=status.HTTP_200_OK)
-def login(user: UserAuthRequest):
-    db_user = db.get_user_by_username(user.username)
-    
-    if not db_user or not check_password_hash(db_user["password"], user.password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Невірне ім'я користувача або пароль."
-        )
-    
-    return {"message": "Успішний вхід!", "user_id": db_user["id"]}
+    db_engine.register_account(user_id, user.email, user.phone)
 
+    # 2. Створюємо відповідний об'єкт залежно від посади та передаємо в C++
+    try:
+        if user.posada.upper() == "DIRECTOR":
+            d = logistics_core.Director()
+            d.id, d.name, d.email, d.phone, d.companyName, d.clearanceLevel = user_id, user.username, user.email, user.phone, "Default Corp", 5
+            db_engine.add_director(d)
+
+        elif user.posada.upper() == "MANAGER":
+            m = logistics_core.Manager()
+            m.id, m.name, m.email, m.phone, m.department = user_id, user.username, user.email, user.phone, "General"
+            db_engine.add_manager(m)
+
+        elif user.posada.upper() == "DRIVER":
+            drv = logistics_core.Driver()
+            drv.id, drv.name, drv.email, drv.phone, drv.status = user_id, user.username, user.email, user.phone, "IDLE"
+            db_engine.add_driver(drv)
+
+        else:
+            raise HTTPException(status_code=400, detail="Unknow post")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error C++ Engine: {str(e)}")
+
+    return {"message": "Success register!", "user_id": user_id, "role": user.role}
 
 @router.get("/users", status_code=status.HTTP_200_OK)
 def get_users():
-    # 1. Отримуємо всіх користувачів з нашої затички
-    all_users = db.get_all_users()
+    # Викликаємо метод з C++
+    staff = db_engine.get_all_online_staff()
 
-    # 2. Створюємо безпечний список без паролів
     safe_users = []
-
-    # all_users - це словник (де ключі - це username, а значення - дані)
-    # Тому ми проходимося по його значеннях (values)
-    for user_data in all_users.values():
+    for person in staff:
         safe_users.append({
-            "id": user_data["id"],
-            "posada": user_data["posada"],
-            "": user_data["username"],
-            "username": user_data["username"]
-            # Пароль навмисно не додаємо сюди!
+            "id": person.id,
+            "name": person.name,
+            "role": person.role,  # Роль, яку встановлює C++ клас
+            "is_online": person.isOnline
         })
 
     return {"users": safe_users}
