@@ -5,8 +5,8 @@ import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Імпортуємо наш C++ рушій
-from database import db_engine
-import logistics_core
+from database import db_engine # ignore
+import logistics_core # ignore
 
 router = APIRouter(
     prefix="/auth",
@@ -21,7 +21,7 @@ class UserRegistrationRequest(BaseModel):
     role: str
 
 class UserLogin(BaseModel):
-    username: str
+    email: str
     password: str
 
 @router.post("/login_user", status_code=status.HTTP_200_OK)
@@ -43,34 +43,35 @@ def login_user(user: UserLogin):
 
 @router.post("/register_user", status_code=status.HTTP_201_CREATED)
 def register_user(user: UserRegistrationRequest):
+
     user_id = str(uuid.uuid4())
     hashed_password = generate_password_hash(user.password, method='pbkdf2:sha256')
 
-    existing_user = db_engine.get_user(user.username) | None
+    existing_user = db_engine.get_person_by_id(user_id)
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
 
-    db_engine.register_account(user_id, user.email, user.phone)
+    db_engine.register_account(user_id, user.email, user.phone, hashed_password, user.role, user.name)
 
     # 2. Створюємо відповідний об'єкт залежно від посади та передаємо в C++
     try:
-        if user.posada.upper() == "DIRECTOR":
+        if user.role.upper() == "DIRECTOR":
             d = logistics_core.Director()
             d.id, d.name, d.email, d.phone, d.companyName, d.clearanceLevel = user_id, user.username, user.email, user.phone, "Default Corp", 5
             db_engine.add_director(d)
 
-        elif user.posada.upper() == "MANAGER":
+        elif user.role.upper() == "MANAGER":
             m = logistics_core.Manager()
             m.id, m.name, m.email, m.phone, m.department = user_id, user.username, user.email, user.phone, "General"
             db_engine.add_manager(m)
 
-        elif user.posada.upper() == "DRIVER":
+        elif user.role.upper() == "DRIVER":
             drv = logistics_core.Driver()
             drv.id, drv.name, drv.email, drv.phone, drv.status = user_id, user.username, user.email, user.phone, "IDLE"
             db_engine.add_driver(drv)
 
         else:
-            raise HTTPException(status_code=400, detail="Unknow post")
+            raise HTTPException(status_code=400, detail="Unknow role")
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error C++ Engine: {str(e)}")

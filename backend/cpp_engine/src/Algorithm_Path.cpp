@@ -1,4 +1,4 @@
-#include "Algoritm_Path.hpp"
+#include "Algorithm_Path.hpp"
 #include<algorithm>
 
 struct RequestCompare {

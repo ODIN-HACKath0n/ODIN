@@ -3,6 +3,10 @@
 #include <algorithm>
 #include <vector>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 typedef std::shared_lock<SharedMutex> SharedLock;
 typedef std::unique_lock<SharedMutex> UniqueLock;
 
@@ -68,6 +72,9 @@ void Director::createWarehouse(StorageManager& db, const Warehouse& w) {
 
 // === STORAGE MANAGER (Конструктор та Деструктор) ===
 StorageManager::StorageManager() {
+    #ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+    #endif
     // 1. Підключення до PostgreSQL
     const char* conninfo = "host=localhost port=5432 dbname=logistics_db user=postgres password=2805";
     conn = PQconnectdb(conninfo);
@@ -127,14 +134,6 @@ void StorageManager::testConnection() {
         PQclear(res);
     }
     PQfinish(testConn);
-}
-
-void StorageManager::registerAccount(const std::string& id, const std::string& email, const std::string& phone) {
-    if (conn == nullptr) return;
-    std::string sql = "INSERT INTO users (id, email, phone, is_online) VALUES ('" +
-        id + "', '" + email + "', '" + phone + "', TRUE) ON CONFLICT DO NOTHING;";
-    PGresult* res = PQexec(conn, sql.c_str());
-    PQclear(res);
 }
 
 std::vector<Driver> StorageManager::getOnlineDrivers() const {
@@ -299,21 +298,26 @@ void StorageManager::internalAddDirector(const Director& d) {
     }
 
     if (conn != nullptr) {
-        // 1. Спільна таблиця
+        // ОНЛАЙН (PostgreSQL) - Явно вказуємо імена колонок!
         std::string sqlUser = "INSERT INTO users (id, email, password_hash, name, phone, role) VALUES ('" +
             d.id + "', '" + d.email + "', '" + d.password + "', '" + d.name + "', '" + d.phone + "', 'DIRECTOR') " +
-            "ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;";
+            "ON CONFLICT (id) DO NOTHING;";
         PQclear(PQexec(conn, sqlUser.c_str()));
 
-        // 2. Профіль директора
         std::string sqlProf = "INSERT INTO director_profiles (user_id, company_name, clearance_level) VALUES ('" +
             d.id + "', '" + d.companyName + "', " + std::to_string(d.clearanceLevel) + ") " +
-            "ON CONFLICT (user_id) DO UPDATE SET company_name = EXCLUDED.company_name;";
+            "ON CONFLICT (user_id) DO NOTHING;";
         PQclear(PQexec(conn, sqlProf.c_str()));
     }
     else if (localDB != nullptr) {
-        std::string s1 = "INSERT INTO offline_users (id, email, password_hash, name, phone, role) VALUES ('" + d.id + "','" + d.email + "','" + d.password + "','" + d.name + "','" + d.phone + "','DIRECTOR');";
-        std::string s2 = "INSERT INTO offline_director_profiles VALUES ('" + d.id + "','" + d.companyName + "'," + std::to_string(d.clearanceLevel) + ");";
+        // ОФЛАЙН (SQLite)
+        // Переконайся, що в таблиці offline_users перша колонка - це ID
+        std::string s1 = "INSERT INTO offline_users (id, email, pass, name, phone, role) VALUES ('" +
+            d.id + "', '" + d.email + "', '" + d.password + "', '" + d.name + "', '" + d.phone + "', 'DIRECTOR');";
+
+        std::string s2 = "INSERT INTO offline_director_profiles (uid, company, clearance) VALUES ('" +
+            d.id + "', '" + d.companyName + "', " + std::to_string(d.clearanceLevel) + ");";
+
         sqlite3_exec(localDB, s1.c_str(), 0, 0, 0);
         sqlite3_exec(localDB, s2.c_str(), 0, 0, 0);
     }
@@ -557,77 +561,51 @@ void StorageManager::syncOfflineData() {
     }
 }
 
-void StorageManager::registerAccount(const std::string& id, const std::string& email, const std::string& phone, const std::string& password, const std::string& role) {
+void StorageManager::registerAccount(const std::string& id, const std::string& email, const std::string& phone, const std::string& password, const std::string& role, const std::string& name) {
     if (conn == nullptr) return;
 
-    // 1. Створюємо головний запис у таблиці users
-    std::string sqlUser = "INSERT INTO users (id, email, phone, password_hash, role, is_online) VALUES ('" +
-        id + "', '" + email + "', '" + phone + "', '" + password + "', '" + role + "', FALSE) " +
-        "ON CONFLICT (id) DO NOTHING;";
+    // 1. Запис у головну таблицю USERS
+    std::string sqlUser = "INSERT INTO users (id, email, phone, password_hash, role, name, is_online) VALUES ('" +
+        id + "', '" + email + "', '" + phone + "', '" + password + "', '" + role + "', '" + name + "', FALSE) " +
+        "ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, email = EXCLUDED.email;";
+
+    std::cout << "[DEBUG SQL]: " << sqlUser << std::endl; // ТУТ ТИ ПОБАЧИШ, ЧИ ПРАВИЛЬНИЙ ID
 
     PGresult* res = PQexec(conn, sqlUser.c_str());
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        std::cerr << "[DB ERROR] Помилка реєстрації користувача: " << PQerrorMessage(conn) << std::endl;
-        PQclear(res);
-        return;
+        std::cerr << "Помилка таблиці users: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res); return;
     }
     PQclear(res);
 
-    // 2. Створюємо "заготовку" профілю залежно від ролі
-    std::string sqlProfile = "";
-    if (role == "DRIVER") {
-        sqlProfile = "INSERT INTO driver_profiles (user_id, status) VALUES ('" + id + "', 'IDLE') ON CONFLICT DO NOTHING;";
-    }
-    else if (role == "MANAGER") {
-        sqlProfile = "INSERT INTO manager_profiles (user_id) VALUES ('" + id + "') ON CONFLICT DO NOTHING;";
-    }
-    else if (role == "DIRECTOR") {
-        sqlProfile = "INSERT INTO director_profiles (user_id) VALUES ('" + id + "') ON CONFLICT DO NOTHING;";
-    }
+    // 2. Створення порожнього профілю
+    std::string sqlProf = "";
+    if (role == "DRIVER") sqlProf = "INSERT INTO driver_profiles (user_id, status) VALUES ('" + id + "', 'IDLE') ON CONFLICT DO NOTHING;";
+    else if (role == "MANAGER") sqlProf = "INSERT INTO manager_profiles (user_id) VALUES ('" + id + "') ON CONFLICT DO NOTHING;";
+    else if (role == "DIRECTOR") sqlProf = "INSERT INTO director_profiles (user_id) VALUES ('" + id + "') ON CONFLICT DO NOTHING;";
 
-    if (!sqlProfile.empty()) {
-        PQclear(PQexec(conn, sqlProfile.c_str()));
-    }
-
-    std::cout << "[REG] Акаунт успішно створено: " << email << " [" << role << "]" << std::endl;
+    if (!sqlProf.empty()) PQclear(PQexec(conn, sqlProf.c_str()));
 }
 
 std::string StorageManager::login(const std::string& email, const std::string& password) {
     if (conn == nullptr) return "ERROR";
 
-    // 1. Шукаємо користувача за поштою
-    std::string sql = "SELECT password_hash, role, id FROM users WHERE email = '" + email + "';";
+    std::string sql = "SELECT id, password_hash, role FROM users WHERE email = '" + email + "';";
     PGresult* res = PQexec(conn, sql.c_str());
 
-    if (PQresultStatus(res) != PGRES_TUPLES_OK || PQntuples(res) == 0) {
-        PQclear(res);
-        return "USER_NOT_FOUND"; // Пошти не існує
+    if (PQntuples(res) == 0) {
+        PQclear(res); return "USER_NOT_FOUND";
     }
 
-    std::string dbPassword = PQgetvalue(res, 0, 0);
-    std::string role = PQgetvalue(res, 0, 1);
-    std::string userId = PQgetvalue(res, 0, 2);
+    std::string dbPass = PQgetvalue(res, 0, 1);
+    std::string role = PQgetvalue(res, 0, 2);
+    std::string uid = PQgetvalue(res, 0, 0);
     PQclear(res);
 
-    // 2. Перевірка пароля
-    if (dbPassword != password) {
-        return "WRONG_PASSWORD"; // Пароль не збігається
-    }
+    if (dbPass != password) return "WRONG_PASSWORD";
 
-    // 3. Якщо все ок — оновлюємо статус "is_online" в PostgreSQL
-    std::string updateSql = "UPDATE users SET is_online = TRUE WHERE id = '" + userId + "';";
-    PQclear(PQexec(conn, updateSql.c_str()));
-
-    // 4. Оновлюємо статус локально в пам'яті C++ (щоб працювали getOnlineDrivers і т.д.)
-    {
-        UniqueLock lock(peopleMutex);
-        if (role == "DRIVER" && drivers.count(userId)) drivers[userId].isOnline = true;
-        else if (role == "MANAGER" && managers.count(userId)) managers[userId].isOnline = true;
-        else if (role == "DISPATCHER" && dispatchers.count(userId)) dispatchers[userId].isOnline = true;
-        else if (role == "DIRECTOR" && directors.count(userId)) directors[userId].isOnline = true;
-    }
-
-    std::cout << "[AUTH] Успішний вхід: " << email << " (" << role << ")" << std::endl;
+    // Оновлюємо статус
+    PQclear(PQexec(conn, ("UPDATE users SET is_online = TRUE WHERE id = '" + uid + "';").c_str()));
     return role;
 }
 
@@ -664,3 +642,62 @@ void StorageManager::logout(const std::string& userId, const std::string& role) 
     }
     std::cout << "[AUTH] Користувач " << userId << " вийшов із системи." << std::endl;
 }
+
+const Person* StorageManager::getPersonById(const std::string& personId) const {    SharedLock lock(peopleMutex);
+    {
+        auto it = drivers.find(personId);
+        if (it != drivers.end()) {
+            return &(it->second);
+        }
+    }
+    {
+        auto it = managers.find(personId);
+        if (it != managers.end()) {
+            return &(it->second);
+        }
+    }
+    {
+        auto it = directors.find(personId);
+        if (it != directors.end()) {
+            return &(it->second);
+        }
+    }
+    {
+        auto it = dispatchers.find(personId);
+        if (it != dispatchers.end()) {
+            return &(it->second);
+        }
+    }
+
+    return nullptr;
+}
+
+void StorageManager::castPersonByRole(const Person* person) const {
+    if (person == nullptr) return;
+
+    if (person->role == "DRIVER") {
+        const Driver* driver = dynamic_cast<const Driver*>(person);
+        if (driver != nullptr) {
+            return;
+        }
+    }
+    else if (person->role == "MANAGER") {
+        const Manager* manager = dynamic_cast<const Manager*>(person);
+        if (manager != nullptr) {
+            return;
+        }
+    }
+    else if (person->role == "DIRECTOR") {
+        const Director* director = dynamic_cast<const Director*>(person);
+        if (director != nullptr) {
+            return;
+        }
+    }
+    else if (person->role == "DISPATCHER") {
+        const Dispatcher* dispatcher = dynamic_cast<const Dispatcher*>(person);
+        if (dispatcher != nullptr) {
+            return;
+        }
+    }
+}
+

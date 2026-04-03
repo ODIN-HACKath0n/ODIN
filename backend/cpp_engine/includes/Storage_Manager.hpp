@@ -8,13 +8,16 @@
 #include <stdexcept>
 #include <libpq-fe.h>
 #include <memory>
+#include <iostream>
 
-class StorageManager; // ������������ ����������
+class StorageManager;
 
+// === ІЄРАРХІЯ КОРИСТУВАЧІВ ===
 class Person {
 public:
     std::string id, name, email, password, phone, role;
     bool isOnline;
+
     Person() : isOnline(false) {}
     Person(std::string id, std::string name, std::string email, std::string pass, std::string phone, std::string role, bool isOnline = false)
         : id(id), name(name), email(email), password(pass), phone(phone), role(role), isOnline(isOnline) {
@@ -25,7 +28,7 @@ public:
 class Driver : public Person {
 public:
     std::string assignedTruckId, status, licenseType, managedById;
-    int experienceYears, maxCapacity, currentLoad; // ����²����: currentLoad
+    int experienceYears, maxCapacity, currentLoad;
 
     Driver() : Person(), experienceYears(0), maxCapacity(0), currentLoad(0) {}
     Driver(std::string id, std::string name, std::string email, std::string pass, std::string phone,
@@ -35,13 +38,13 @@ public:
         experienceYears(exp), maxCapacity(maxCap), currentLoad(curLoad), managedById(mid) {
     }
 
-    // ����������: ��������� ����� �������� � .cpp
     void takeTruck(StorageManager& db, const std::string& truckId);
 };
 
 class Dispatcher : public Person {
 public:
     std::string managedById;
+
     Dispatcher() : Person() {}
     Dispatcher(std::string id, std::string name, std::string email, std::string pass, std::string phone, std::string mid)
         : Person(id, name, email, pass, phone, "DISPATCHER"), managedById(mid) {
@@ -55,6 +58,7 @@ class Manager : public Person {
 public:
     std::string department, managedRegion, managedById;
     double px, py;
+
     Manager() : Person(), px(0.0), py(0.0) {}
     Manager(std::string id, std::string name, std::string email, std::string pass, std::string phone,
         std::string dept, std::string region, std::string mid, double x, double y)
@@ -72,6 +76,7 @@ class Director : public Person {
 public:
     std::string companyName;
     int clearanceLevel;
+
     Director() : Person(), clearanceLevel(0) {}
     Director(std::string id, std::string name, std::string email, std::string pass, std::string phone,
         std::string company, int clearance)
@@ -83,7 +88,7 @@ public:
     void createWarehouse(StorageManager& db, const Warehouse& w);
 };
 
-// ҳ������ ���
+// === ТИПІЗАЦІЯ МАП (Повертаємо те, що я випадково видалив) ===
 typedef std::shared_mutex SharedMutex;
 typedef std::unordered_map<int, Warehouse> WarehouseMap;
 typedef std::unordered_map<unsigned int, Request> RequestMap;
@@ -92,6 +97,7 @@ typedef std::unordered_map<std::string, Director> DirectorMap;
 typedef std::unordered_map<std::string, Dispatcher> DispatcherMap;
 typedef std::unordered_map<std::string, Driver> DriverMap;
 
+// === ГОЛОВНИЙ КЛАС БД ===
 class StorageManager {
 private:
     WarehouseMap warehouses;
@@ -102,31 +108,42 @@ private:
     DriverMap drivers;
     sqlite3* localDB;
     PGconn* conn;
-    mutable SharedMutex warehouseMutex, requestMutex, peopleMutex;
+
+    mutable SharedMutex warehouseMutex;
+    mutable SharedMutex requestMutex;
+    mutable SharedMutex peopleMutex;
 
 public:
     StorageManager();
     ~StorageManager();
     void testConnection();
-    void registerAccount(const std::string& id, const std::string& email, const std::string& phone);
+
+    // Авторизація та Реєстрація
+    void registerAccount(const std::string& id, const std::string& email, const std::string& phone, const std::string& password, const std::string& role, const std::string& name = "New User");
+    std::string login(const std::string& email, const std::string& password);
+    void logout(const std::string& userId, const std::string& role);
+
+    // Гетери
     std::vector<Driver> getOnlineDrivers() const;
     std::vector<Person> getAllOnlineStaff() const;
     std::vector<Request> getSortedRequests() const;
     std::vector<std::shared_ptr<Warehouse>> getWarehousesList() const;
 
-    // ����в�Ͳ ������ (�������� �� ���� ��)
+    // Внутрішні методи запису
     void internalAddManager(const Manager& m);
     void internalAddDispatcher(const Dispatcher& d);
     void internalAddDriver(const Driver& d);
-    void internalAddDirector(const Director& d);
     void internalAddRequest(const Request& r);
     void internalAssignRoute(const std::string& driverId, const Request& req);
     void internalUpdateManagerLocation(const std::string& managerId, double px, double py);
     void internalAddWarehouse(const Warehouse& w);
+    void internalAddDirector(const Director& d);
+    std::unordered_map<std::string, std::string> getUserAuthData(const std::string& email);
+
+    const Person* getPersonById(const std::string& personId) const;
+    void castPersonByRole(const Person* person) const;
+
+    // Синхронізація
     void syncOfflineData();
     void loadFromSQL();
-    void registerAccount(const std::string& id, const std::string& email, const std::string& phone, const std::string& password, const std::string& role);
-    std::string login(const std::string& email, const std::string& password);
-    std::unordered_map<std::string, std::string> getUserAuthData(const std::string& email);
-    void logout(const std::string& userId, const std::string& role);
 };
