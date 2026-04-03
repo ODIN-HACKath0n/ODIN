@@ -619,3 +619,62 @@ void StorageManager::logout(const std::string& userId, const std::string& role) 
     }
     std::cout << "[AUTH] Користувач " << userId << " вийшов із системи." << std::endl;
 }
+
+const Person* getPersonById(std::string& personId) {
+    SharedLock lock(peopleMutex);
+    {
+        auto it = drivers.find(personId);
+        if (it != drivers.end()) { 
+            return &(it->second);
+        }
+    }
+    {
+        auto it = managers.find(personId);
+        if (it != managers.end()) {
+            return &(it->second);
+        }
+    }
+    {
+        auto it = directors.find(personId);
+        if (it != directors.end()) {
+            return &(it->second);
+        }
+    }
+    {
+        auto it = dispatchers.find(personId);
+        if (it != dispatchers.end()) {
+            return &(it->second);
+        }
+    }
+
+    return nullptr;
+}
+
+void castPersonByRole(const Person* person) {
+    if (person == nullptr)return;
+    if (person->role == "DRIVER") {
+        const Driver* driver = dynamic_cast<const Driver*>(person);
+        if (driver != nullptr) {
+            return;
+        }
+    }
+    else if (person->role == "MANAGER") {
+        const Manager* manager = dynamic_cast<const Manager*>(person);
+        if (manager != nullptr) {
+            return;
+        }
+    }
+    else if (person->role == "DIRECTOR") {
+        const Director* director = dynamic_cast<const Director*>(person);
+        if (director != nullptr) {
+            return;
+        }
+    }
+    else if (person->role == "DISPATCHER") {
+        const Dispatcher* dispatcher = dynamic_cast<const Dispatcher*>(person);
+        if (dispatcher != nullptr) {
+            return;
+        }
+    }
+}
+
