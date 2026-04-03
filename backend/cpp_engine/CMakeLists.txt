@@ -17,18 +17,19 @@ FetchContent_MakeAvailable(pybind11)
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
 # Знаходимо PostgreSQL (libpq)
+find_package(SQLite3 REQUIRED)
 find_package(PostgreSQL REQUIRED)
 
-# Додаємо ваш модуль
+# Створюємо ЄДИНИЙ модуль, додаючи ВСІ .cpp файли проекту
 pybind11_add_module(logistics_core
-    src/Source.cpp
-    src/StorageManager.cpp
-    # Додайте сюди інші .cpp файли, якщо вони є (наприклад algoritm.cpp)
+    src/Algorithm_Path.cpp
+    src/Storage_Manager.cpp
+    src/Python_include.cpp # ОБОВ'ЯЗКОВО додати файл з PYBIND11_MODULE
 )
 
-# Підключаємо папки із заголовками
-target_include_directories(logistics_core PRIVATE include)
+target_include_directories(logistics_core PRIVATE includes)
 target_include_directories(logistics_core PRIVATE ${PostgreSQL_INCLUDE_DIRS})
+target_include_directories(logistics_core PRIVATE ${SQLite3_INCLUDE_DIRS})
 
-# Лінкуємо PostgreSQL
-target_link_libraries(logistics_core PRIVATE ${PostgreSQL_LIBRARIES})
+# Лінкуємо і PostgreSQL, і SQLite3
+target_link_libraries(logistics_core PRIVATE ${PostgreSQL_LIBRARIES} SQLite::SQLite3)

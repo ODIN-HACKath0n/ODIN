@@ -1,4 +1,4 @@
-#include "headerAlgoritm.hpp"
+#include "Algoritm_Path.hpp"
 #include<algorithm>
 
 struct RequestCompare {
@@ -40,7 +40,7 @@ bool PriorityManager::hasRequests() {
 	return !globalQueue.empty();
 }
 
-std::shared_ptr<Warehouse> ResourceFinder::findBestPath(const Request& req,const std::vector<std::shared_ptr<Warehouse>>& allWarehouses){
+std::shared_ptr<Warehouse> ResourceFinder::findBestPath(const Request& req, const std::vector<std::shared_ptr<Warehouse>>& allWarehouses) {
 	std::shared_ptr<Warehouse> bestWarehouse = nullptr;
 	double straightPath = GeoMath::calculateDistance(req.px, req.py, req.targetPx, req.targetPy);
 	double cof = getDeviationFactor(req.priority);
@@ -72,8 +72,4 @@ double getDeviationFactor(Priority p) {
 	if (p == Priority::CRITICAL) return 1.05;
 	if (p == Priority::HIGH)     return 1.15;
 	return 1.30;
-}
-
-int main(void) {
-	return 0;
 }

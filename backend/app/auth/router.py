@@ -8,7 +8,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from database import db_engine
 import logistics_core
 
-router = APIRouter(prefix="/auth", tags=["Авторизація"])
+router = APIRouter(
+    prefix="/auth",
+    tags=["Authorization"]
+)
 
 class UserRegistrationRequest(BaseModel):
     name: str
@@ -23,12 +26,19 @@ class UserLogin(BaseModel):
 
 @router.post("/login_user", status_code=status.HTTP_200_OK)
 def login_user(user: UserLogin):
-    # дістати користувача з бази
-    user = db_engine.get_user(user.username) | None # Повернути об'єкт користувача з паролем
-    if user and check_password_hash(UserLogin.password, user.password):
-        pass
-    else:
-        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    auth_data = db_engine.get_user_auth_data(user.email)
+
+    if not auth_data:
+        raise HTTPException(status_code=404, detail="Користувача не знайдено")
+
+    # Перевіряємо хеш засобами Python
+    if not check_password_hash(auth_data["password_hash"], user.password):
+        raise HTTPException(status_code=401, detail="Неправильний пароль")
+
+    # Тільки після успішної перевірки кажемо C++ зробити користувача онлайн
+    db_engine.set_user_online(auth_data["id"])
+
+    return {"message": "Вхід успішний", "role": auth_data["role"]}
 
 
 @router.post("/register_user", status_code=status.HTTP_201_CREATED)
