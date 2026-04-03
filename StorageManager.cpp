@@ -1,24 +1,19 @@
-#include "StorageManager.hpp"
+#include "Storage_Manager.hpp"
 #include <iostream>
-#include <filesystem>
 #include <algorithm>
 #include <vector>
 
 typedef std::shared_lock<SharedMutex> SharedLock;
 typedef std::unique_lock<SharedMutex> UniqueLock;
 
+// === МЕТОДИ ВОДІЯ ===
 void Driver::takeTruck(StorageManager& db, const std::string& truckId) {
     db.internalAssignRoute(this->id, Request{});
     this->assignedTruckId = truckId;
     this->status = "ON_ROUTE";
 }
 
-void Driver::updateLocation(StorageManager& db, double newPx, double newPy) {
-    db.internalUpdateDriverLocation(this->id, newPx, newPy);
-    this->px = newPx;
-    this->py = newPy;
-}
-
+// === МЕТОДИ ДИСПЕТЧЕРА ===
 void Dispatcher::createRequest(StorageManager& db, const Request& r) {
     db.internalAddRequest(r);
 }
@@ -27,6 +22,7 @@ void Dispatcher::assignRouteToDriver(StorageManager& db, const std::string& driv
     db.internalAssignRoute(driverId, req);
 }
 
+// === МЕТОДИ МЕНЕДЖЕРА ===
 void Manager::addDispatcher(StorageManager& db, const Dispatcher& d) {
     db.internalAddDispatcher(d);
 }
@@ -35,6 +31,33 @@ void Manager::addDriver(StorageManager& db, const Driver& d) {
     db.internalAddDriver(d);
 }
 
+void Manager::updateLocation(StorageManager& db, double newPx, double newPy) {
+    db.internalUpdateManagerLocation(this->id, newPx, newPy);
+    this->px = newPx;
+    this->py = newPy;
+}
+
+bool Manager::assignTransportation(StorageManager& db, const std::string& driverId, const Request& req) {
+    auto allWh = db.getWarehousesList();
+
+    // Менеджер використовує алгоритм пошуку
+    auto bestWh = ResourceFinder::findBestPath(req, allWh);
+    
+    if (bestWh != nullptr) {
+        std::cout << "[МЕНЕДЖЕР " << this->name << "] Знайдено найкращий склад (ID: "
+            << bestWh->id << ") для товару '" << req.itemNeeded << "'. Відправляю водія!" << std::endl;
+
+        db.internalAssignRoute(driverId, req);
+        return true;
+    }
+    else {
+        std::cout << "[МЕНЕДЖЕР " << this->name << "] Увага! Не знайдено складу з товаром '"
+            << req.itemNeeded << "' або бракує місця у вантажівці." << std::endl;
+        return false;
+    }
+}
+
+// === МЕТОДИ ДИРЕКТОРА ===
 void Director::addManager(StorageManager& db, const Manager& m) {
     db.internalAddManager(m);
 }
@@ -43,41 +66,54 @@ void Director::createWarehouse(StorageManager& db, const Warehouse& w) {
     db.internalAddWarehouse(w);
 }
 
-// ВИПРАВЛЕНО: конструктор тепер правильно обробляє невдале з'єднання
+// === STORAGE MANAGER (Конструктор та Деструктор) ===
 StorageManager::StorageManager() {
+    // 1. Підключення до PostgreSQL
     const char* conninfo = "host=localhost port=5432 dbname=logistics_db user=postgres password=2805";
     conn = PQconnectdb(conninfo);
 
     if (PQstatus(conn) != CONNECTION_OK) {
-        std::cerr << "[DB ERROR] " << PQerrorMessage(conn) << std::endl;
+        std::cerr << "[ГЛОБАЛЬНА БД] Немає зв'язку: " << PQerrorMessage(conn) << std::endl;
         PQfinish(conn);
-        conn = nullptr; // ВИПРАВЛЕНО: позначаємо що conn недійсний
+        conn = nullptr;
     }
     else {
         PQsetClientEncoding(conn, "UTF8");
-    }
-
-    loadFromDiskBinary();
-
-    if (conn != nullptr) { // ВИПРАВЛЕНО: SQL тільки якщо з'єднання є
         loadFromSQL();
     }
 
-    backgroundSaver = std::thread(&StorageManager::saverLoop, this);
+    // 2. Підключення до SQLite (створення офлайн-таблиць)
+    int rc = sqlite3_open("offline_data.db", &localDB);
+    if (rc) {
+        std::cerr << "[ЛОКАЛЬНА БД] Помилка: " << sqlite3_errmsg(localDB) << std::endl;
+    }
+    else {
+        std::string sql =
+            "CREATE TABLE IF NOT EXISTS offline_users (id TEXT PRIMARY KEY, email TEXT, pass TEXT, name TEXT, phone TEXT, role TEXT, mid TEXT);"
+            "CREATE TABLE IF NOT EXISTS offline_driver_profiles (uid TEXT, truck TEXT, status TEXT, license TEXT, exp INTEGER, max_c INTEGER, cur_l INTEGER);"
+            "CREATE TABLE IF NOT EXISTS offline_manager_profiles (uid TEXT, dept TEXT, region TEXT, px REAL, py REAL);"
+            "CREATE TABLE IF NOT EXISTS offline_director_profiles (uid TEXT, company TEXT, clearance INTEGER);";
+
+        sqlite3_exec(localDB, sql.c_str(), 0, 0, 0);
+    }
+
+    // 3. ОСЬ ТУТ МИ ЇЇ ВИКЛИКАЄМО!
+    // Синхронізуємо тільки якщо ОБИДВІ бази успішно підключені
+    if (conn != nullptr && localDB != nullptr) {
+        syncOfflineData();
+    }
 }
 
 StorageManager::~StorageManager() {
-    keepRunning = false;
-    if (backgroundSaver.joinable()) {
-        backgroundSaver.join();
-    }
-    saveToDiskBinary();
-
     if (conn != nullptr) {
         PQfinish(conn);
     }
+    if (localDB != nullptr) {
+        sqlite3_close(localDB);
+    }
 }
 
+// === STORAGE MANAGER (Інші методи) ===
 void StorageManager::testConnection() {
     const char* conninfo = "host=localhost port=5432 dbname=logistics_db user=postgres password=2805 options='-c client_encoding=UTF8'";
     PGconn* testConn = PQconnectdb(conninfo);
@@ -91,14 +127,6 @@ void StorageManager::testConnection() {
         PQclear(res);
     }
     PQfinish(testConn);
-}
-
-void StorageManager::registerAccount(const std::string& id, const std::string& email, const std::string& phone) {
-    if (conn == nullptr) return; // ВИПРАВЛЕНО
-    std::string sql = "INSERT INTO users (id, email, phone, is_online) VALUES ('" +
-        id + "', '" + email + "', '" + phone + "', TRUE) ON CONFLICT DO NOTHING;";
-    PGresult* res = PQexec(conn, sql.c_str());
-    PQclear(res);
 }
 
 std::vector<Driver> StorageManager::getOnlineDrivers() const {
@@ -135,18 +163,41 @@ std::vector<Request> StorageManager::getSortedRequests() const {
     return sorted;
 }
 
+std::vector<std::shared_ptr<Warehouse>> StorageManager::getWarehousesList() const {
+    SharedLock lock(warehouseMutex);
+    std::vector<std::shared_ptr<Warehouse>> list;
+    for (const auto& [id, w] : warehouses) {
+        list.push_back(std::make_shared<Warehouse>(w));
+    }
+    return list;
+}
+
+// === ВНУТРІШНІ МЕТОДИ SQL ===
 void StorageManager::internalAddManager(const Manager& m) {
     {
         UniqueLock lock(peopleMutex);
         managers[m.id] = m;
     }
-    if (conn == nullptr) return; // ВИПРАВЛЕНО
-    std::string sql = "INSERT INTO managers (id, name, email, phone, department, managed_region, managed_by_id) VALUES ('" +
-        m.id + "', '" + m.name + "', '" + m.email + "', '" + m.phone + "', '" +
-        m.department + "', '" + m.managedRegion + "', '" + m.managedById + "') " +
-        "ON CONFLICT (id) DO UPDATE SET department = EXCLUDED.department, managed_region = EXCLUDED.managed_region;";
-    PGresult* res = PQexec(conn, sql.c_str());
-    PQclear(res);
+
+    if (conn != nullptr) {
+        // 1. Спільна таблиця
+        std::string sqlUser = "INSERT INTO users (id, email, password_hash, name, phone, role, managed_by_id) VALUES ('" +
+            m.id + "', '" + m.email + "', '" + m.password + "', '" + m.name + "', '" + m.phone + "', 'MANAGER', '" + m.managedById + "') " +
+            "ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;";
+        PQclear(PQexec(conn, sqlUser.c_str()));
+
+        // 2. Профіль менеджера
+        std::string sqlProf = "INSERT INTO manager_profiles (user_id, department, managed_region, px, py) VALUES ('" +
+            m.id + "', '" + m.department + "', '" + m.managedRegion + "', " + std::to_string(m.px) + ", " + std::to_string(m.py) + ") " +
+            "ON CONFLICT (user_id) DO UPDATE SET department = EXCLUDED.department;";
+        PQclear(PQexec(conn, sqlProf.c_str()));
+    }
+    else if (localDB != nullptr) {
+        std::string s1 = "INSERT INTO offline_users VALUES ('" + m.id + "','" + m.email + "','" + m.password + "','" + m.name + "','" + m.phone + "','MANAGER','" + m.managedById + "');";
+        std::string s2 = "INSERT INTO offline_manager_profiles VALUES ('" + m.id + "','" + m.department + "','" + m.managedRegion + "'," + std::to_string(m.px) + "," + std::to_string(m.py) + ");";
+        sqlite3_exec(localDB, s1.c_str(), 0, 0, 0);
+        sqlite3_exec(localDB, s2.c_str(), 0, 0, 0);
+    }
 }
 
 void StorageManager::internalAddDispatcher(const Dispatcher& d) {
@@ -154,12 +205,17 @@ void StorageManager::internalAddDispatcher(const Dispatcher& d) {
         UniqueLock lock(peopleMutex);
         dispatchers[d.id] = d;
     }
-    if (conn == nullptr) return; // ВИПРАВЛЕНО
-    std::string sql = "INSERT INTO dispatchers (id, name, email, phone, managed_by_id) VALUES ('" +
-        d.id + "', '" + d.name + "', '" + d.email + "', '" + d.phone + "', '" + d.managedById + "') " +
-        "ON CONFLICT (id) DO UPDATE SET managed_by_id = EXCLUDED.managed_by_id;";
-    PGresult* res = PQexec(conn, sql.c_str());
-    PQclear(res);
+
+    if (conn != nullptr) {
+        std::string sql = "INSERT INTO users (id, email, password_hash, name, phone, role, managed_by_id) VALUES ('" +
+            d.id + "', '" + d.email + "', '" + d.password + "', '" + d.name + "', '" + d.phone + "', 'DISPATCHER', '" + d.managedById + "') " +
+            "ON CONFLICT (id) DO UPDATE SET managed_by_id = EXCLUDED.managed_by_id;";
+        PQclear(PQexec(conn, sql.c_str()));
+    }
+    else if (localDB != nullptr) {
+        std::string sql = "INSERT INTO offline_users VALUES ('" + d.id + "','" + d.email + "','" + d.password + "','" + d.name + "','" + d.phone + "','DISPATCHER','" + d.managedById + "');";
+        sqlite3_exec(localDB, sql.c_str(), 0, 0, 0);
+    }
 }
 
 void StorageManager::internalAddDriver(const Driver& d) {
@@ -167,31 +223,28 @@ void StorageManager::internalAddDriver(const Driver& d) {
         UniqueLock lock(peopleMutex);
         drivers[d.id] = d;
     }
-    if (conn == nullptr) {
-        std::cerr << "[!] Помилка: Запис у БД неможливий, немає з'єднання!" << std::endl;
-        return;
+
+    if (conn != nullptr) {
+        // 1. Запис у USERS (Фундамент)
+        std::string sqlUser = "INSERT INTO users (id, email, password_hash, name, phone, role, managed_by_id) VALUES ('" +
+            d.id + "', '" + d.email + "', '" + d.password + "', '" + d.name + "', '" + d.phone + "', 'DRIVER', '" + d.managedById + "') " +
+            "ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, phone = EXCLUDED.phone;";
+        PQclear(PQexec(conn, sqlUser.c_str()));
+
+        // 2. Запис у DRIVER_PROFILES (Специфіка)
+        std::string sqlProfile = "INSERT INTO driver_profiles (user_id, assigned_truck_id, status, license_type, experience_years, max_capacity, current_load) VALUES ('" +
+            d.id + "', '" + d.assignedTruckId + "', '" + d.status + "', '" + d.licenseType + "', " +
+            std::to_string(d.experienceYears) + ", " + std::to_string(d.maxCapacity) + ", " + std::to_string(d.currentLoad) + ") " +
+            "ON CONFLICT (user_id) DO UPDATE SET status = EXCLUDED.status, current_load = EXCLUDED.current_load;";
+        PQclear(PQexec(conn, sqlProfile.c_str()));
     }
-
-    std::string sql = "INSERT INTO drivers (id, name, email, phone, is_online, assigned_truck_id, status, license_type, experience_years, px, py, max_capacity, current_load, managed_by_id) "
-        "VALUES ('" + d.id + "', '" + d.name + "', '" + d.email + "', '" + d.phone + "', " +
-        (d.isOnline ? "TRUE" : "FALSE") + ", '" + d.assignedTruckId + "', '" + d.status + "', '" +
-        d.licenseType + "', " + std::to_string(d.experienceYears) + ", " +
-        std::to_string(d.px) + ", " + std::to_string(d.py) + ", " +
-        std::to_string(d.maxCapacity) + ", " + std::to_string(d.currentLoad) + ", '" + d.managedById + "') "
-        "ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, px = EXCLUDED.px, py = EXCLUDED.py;";
-
-    PGresult* res = PQexec(conn, sql.c_str());
-
-    // --- ДОДАЙ ЦЕЙ БЛОК ДЛЯ ПЕРЕВІРКИ ---
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        std::cerr << "[SQL Error] Дані не збережено: " << PQerrorMessage(conn) << std::endl;
+    else if (localDB != nullptr) {
+        // ОФЛАЙН (теж у дві таблиці)
+        std::string s1 = "INSERT INTO offline_users VALUES ('" + d.id + "','" + d.email + "','" + d.password + "','" + d.name + "','" + d.phone + "','DRIVER',0,'" + d.managedById + "');";
+        std::string s2 = "INSERT INTO offline_driver_profiles VALUES ('" + d.id + "','" + d.assignedTruckId + "','" + d.status + "','" + d.licenseType + "'," + std::to_string(d.experienceYears) + "," + std::to_string(d.maxCapacity) + "," + std::to_string(d.currentLoad) + ");";
+        sqlite3_exec(localDB, s1.c_str(), 0, 0, 0);
+        sqlite3_exec(localDB, s2.c_str(), 0, 0, 0);
     }
-    else {
-        std::cout << "[SQL OK] Водій збережений у PostgreSQL!" << std::endl;
-    }
-    // ------------------------------------
-
-    PQclear(res);
 }
 
 void StorageManager::internalAddWarehouse(const Warehouse& w) {
@@ -199,7 +252,7 @@ void StorageManager::internalAddWarehouse(const Warehouse& w) {
         UniqueLock lock(warehouseMutex);
         warehouses[w.id] = w;
     }
-    if (conn == nullptr) return; // ВИПРАВЛЕНО
+    if (conn == nullptr) return;
     std::string inventoryJson = "{";
     bool first = true;
     for (const auto& [item, count] : w.inventory) {
@@ -212,8 +265,7 @@ void StorageManager::internalAddWarehouse(const Warehouse& w) {
     std::string sql = "INSERT INTO warehouses (id, px, py, inventory) VALUES (" +
         std::to_string(w.id) + ", " + std::to_string(w.px) + ", " + std::to_string(w.py) + ", '" + inventoryJson + "') " +
         "ON CONFLICT (id) DO UPDATE SET px = EXCLUDED.px, py = EXCLUDED.py, inventory = EXCLUDED.inventory;";
-    PGresult* res = PQexec(conn, sql.c_str());
-    PQclear(res);
+    PQclear(PQexec(conn, sql.c_str()));
 }
 
 void StorageManager::internalAddRequest(const Request& r) {
@@ -221,7 +273,7 @@ void StorageManager::internalAddRequest(const Request& r) {
         UniqueLock lock(requestMutex);
         requests[r.id] = r;
     }
-    if (conn == nullptr) return; // ВИПРАВЛЕНО
+    if (conn == nullptr) return;
     std::string priorityStr = (r.priority == Priority::CRITICAL) ? "CRITICAL" : (r.priority == Priority::HIGH) ? "HIGH" : "NORMAL";
 
     std::string sql = "INSERT INTO requests (id, timestamp, priority, item_needed, px, py, target_px, target_py, current_load, item_weight, max_capacity) VALUES (" +
@@ -229,8 +281,7 @@ void StorageManager::internalAddRequest(const Request& r) {
         std::to_string(r.px) + ", " + std::to_string(r.py) + ", " + std::to_string(r.targetPx) + ", " + std::to_string(r.targetPy) + ", " +
         std::to_string(r.currentLoad) + ", " + std::to_string(r.itemWeight) + ", " + std::to_string(r.maxCapacity) + ") " +
         "ON CONFLICT (id) DO UPDATE SET priority = EXCLUDED.priority, item_needed = EXCLUDED.item_needed;";
-    PGresult* res = PQexec(conn, sql.c_str());
-    PQclear(res);
+    PQclear(PQexec(conn, sql.c_str()));
 }
 
 void StorageManager::internalAddDirector(const Director& d) {
@@ -238,13 +289,31 @@ void StorageManager::internalAddDirector(const Director& d) {
         UniqueLock lock(peopleMutex);
         directors[d.id] = d;
     }
-    if (conn == nullptr) return;
-    std::string sql = "INSERT INTO directors (id, name, email, phone, company_name, clearance_level) VALUES ('" +
-        d.id + "', '" + d.name + "', '" + d.email + "', '" + d.phone + "', '" +
-        d.companyName + "', " + std::to_string(d.clearanceLevel) + ") " +
-        "ON CONFLICT (id) DO UPDATE SET company_name = EXCLUDED.company_name;";
-    PGresult* res = PQexec(conn, sql.c_str());
-    PQclear(res);
+
+    if (conn != nullptr) {
+        // ОНЛАЙН (PostgreSQL) - Явно вказуємо імена колонок!
+        std::string sqlUser = "INSERT INTO users (id, email, password_hash, name, phone, role) VALUES ('" +
+            d.id + "', '" + d.email + "', '" + d.password + "', '" + d.name + "', '" + d.phone + "', 'DIRECTOR') " +
+            "ON CONFLICT (id) DO NOTHING;";
+        PQclear(PQexec(conn, sqlUser.c_str()));
+
+        std::string sqlProf = "INSERT INTO director_profiles (user_id, company_name, clearance_level) VALUES ('" +
+            d.id + "', '" + d.companyName + "', " + std::to_string(d.clearanceLevel) + ") " +
+            "ON CONFLICT (user_id) DO NOTHING;";
+        PQclear(PQexec(conn, sqlProf.c_str()));
+    }
+    else if (localDB != nullptr) {
+        // ОФЛАЙН (SQLite)
+        // Переконайся, що в таблиці offline_users перша колонка - це ID
+        std::string s1 = "INSERT INTO offline_users (id, email, pass, name, phone, role) VALUES ('" +
+            d.id + "', '" + d.email + "', '" + d.password + "', '" + d.name + "', '" + d.phone + "', 'DIRECTOR');";
+
+        std::string s2 = "INSERT INTO offline_director_profiles (uid, company, clearance) VALUES ('" +
+            d.id + "', '" + d.companyName + "', " + std::to_string(d.clearanceLevel) + ");";
+
+        sqlite3_exec(localDB, s1.c_str(), 0, 0, 0);
+        sqlite3_exec(localDB, s2.c_str(), 0, 0, 0);
+    }
 }
 
 void StorageManager::internalAssignRoute(const std::string& driverId, const Request& req) {
@@ -254,268 +323,299 @@ void StorageManager::internalAssignRoute(const std::string& driverId, const Requ
             drivers[driverId].status = "ON_ROUTE";
         }
     }
-    if (conn == nullptr) return; // ВИПРАВЛЕНО
+    if (conn == nullptr) return;
     std::string sql = "UPDATE drivers SET status = 'ON_ROUTE' WHERE id = '" + driverId + "';";
-    PGresult* res = PQexec(conn, sql.c_str());
-    PQclear(res);
+    PQclear(PQexec(conn, sql.c_str()));
 }
 
-void StorageManager::internalUpdateDriverLocation(const std::string& driverId, double px, double py) {
+void StorageManager::internalUpdateManagerLocation(const std::string& managerId, double px, double py) {
     {
         UniqueLock lock(peopleMutex);
-        if (drivers.find(driverId) != drivers.end()) {
-            drivers[driverId].px = px;
-            drivers[driverId].py = py;
+        if (managers.find(managerId) != managers.end()) {
+            managers[managerId].px = px;
+            managers[managerId].py = py;
         }
     }
-    if (conn == nullptr) return; // ВИПРАВЛЕНО
-    std::string sql = "UPDATE drivers SET px = " + std::to_string(px) + ", py = " + std::to_string(py) + " WHERE id = '" + driverId + "';";
-    PGresult* res = PQexec(conn, sql.c_str());
-    PQclear(res);
+    if (conn == nullptr) return;
+    std::string sql = "UPDATE managers SET px = " + std::to_string(px) + ", py = " + std::to_string(py) + " WHERE id = '" + managerId + "';";
+    PQclear(PQexec(conn, sql.c_str()));
 }
 
 void StorageManager::loadFromSQL() {
-    if (conn == nullptr) return; // ВИПРАВЛЕНО
+    if (conn == nullptr) return;
     UniqueLock lock(peopleMutex);
-    PGresult* res = PQexec(conn, "SELECT id, name, email, phone, is_online, assigned_truck_id, status, license_type, experience_years, px, py, max_capacity, current_load, managed_by_id FROM drivers");
-    if (PQresultStatus(res) == PGRES_TUPLES_OK) {
+
+    // 1. Завантаження ВОДІЇВ (Об'єднуємо users та driver_profiles)
+    std::string sqlDr =
+        "SELECT u.id, u.name, u.email, u.password_hash, u.phone, u.is_online, "
+        "p.assigned_truck_id, p.status, p.license_type, p.experience_years, p.max_capacity, p.current_load, u.managed_by_id "
+        "FROM users u "
+        "JOIN driver_profiles p ON u.id = p.user_id "
+        "WHERE u.role = 'DRIVER';";
+
+    PGresult* resDr = PQexec(conn, sqlDr.c_str());
+    if (PQresultStatus(resDr) == PGRES_TUPLES_OK) {
         drivers.clear();
-        int rows = PQntuples(res);
-        for (int i = 0; i < rows; i++) {
-            Driver d;
-            d.id = PQgetvalue(res, i, 0);
-            d.name = PQgetvalue(res, i, 1);
-            d.email = PQgetvalue(res, i, 2);
-            d.phone = PQgetvalue(res, i, 3);
-            d.isOnline = (std::string(PQgetvalue(res, i, 4)) == "t");
-            d.assignedTruckId = PQgetvalue(res, i, 5);
-            d.status = PQgetvalue(res, i, 6);
-            d.licenseType = PQgetvalue(res, i, 7);
-            d.experienceYears = std::stoi(PQgetvalue(res, i, 8));
-            d.px = std::stod(PQgetvalue(res, i, 9));
-            d.py = std::stod(PQgetvalue(res, i, 10));
-            d.maxCapacity = std::stoi(PQgetvalue(res, i, 11));
-            d.currentLoad = std::stoi(PQgetvalue(res, i, 12));
-            d.managedById = PQgetvalue(res, i, 13);
-            d.role = "DRIVER";
+        for (int i = 0; i < PQntuples(resDr); i++) {
+            Driver d(
+                PQgetvalue(resDr, i, 0),  // id
+                PQgetvalue(resDr, i, 1),  // name
+                PQgetvalue(resDr, i, 2),  // email
+                PQgetvalue(resDr, i, 3),  // password
+                PQgetvalue(resDr, i, 4),  // phone
+                PQgetvalue(resDr, i, 6),  // truck
+                PQgetvalue(resDr, i, 7),  // status
+                PQgetvalue(resDr, i, 8),  // license
+                std::stoi(PQgetvalue(resDr, i, 9)),  // exp
+                std::stoi(PQgetvalue(resDr, i, 10)), // max_cap
+                std::stoi(PQgetvalue(resDr, i, 11)), // current_load
+                PQgetvalue(resDr, i, 12) // managed_by
+            );
+            d.isOnline = (std::string(PQgetvalue(resDr, i, 5)) == "t");
             drivers[d.id] = d;
         }
     }
+    PQclear(resDr);
+
+    // 2. Завантаження МЕНЕДЖЕРІВ (users + manager_profiles)
+    std::string sqlMg =
+        "SELECT u.id, u.name, u.email, u.password_hash, u.phone, u.is_online, "
+        "p.department, p.managed_region, u.managed_by_id, p.px, p.py "
+        "FROM users u "
+        "JOIN manager_profiles p ON u.id = p.user_id "
+        "WHERE u.role = 'MANAGER';";
+
+    PGresult* resMg = PQexec(conn, sqlMg.c_str());
+    if (PQresultStatus(resMg) == PGRES_TUPLES_OK) {
+        managers.clear();
+        for (int i = 0; i < PQntuples(resMg); i++) {
+            Manager m(
+                PQgetvalue(resMg, i, 0),
+                PQgetvalue(resMg, i, 1),
+                PQgetvalue(resMg, i, 2),
+                PQgetvalue(resMg, i, 3),
+                PQgetvalue(resMg, i, 4),
+                PQgetvalue(resMg, i, 6), // dept
+                PQgetvalue(resMg, i, 7), // region
+                PQgetvalue(resMg, i, 8), // mid
+                std::stod(PQgetvalue(resMg, i, 9)), // px
+                std::stod(PQgetvalue(resMg, i, 10)) // py
+            );
+            m.isOnline = (std::string(PQgetvalue(resMg, i, 5)) == "t");
+            managers[m.id] = m;
+        }
+    }
+    PQclear(resMg);
+}
+
+void StorageManager::syncOfflineData() {
+    if (conn == nullptr || localDB == nullptr) return;
+
+    std::cout << "\n[СИНХРОНІЗАЦІЯ] Початок вивантаження даних..." << std::endl;
+    sqlite3_stmt* stmt;
+    int totalSynced = 0;
+
+    // ==========================================================
+    // 1. СИНХРОНІЗАЦІЯ ВОДІЇВ (Users + Driver_Profiles)
+    // ==========================================================
+    std::string sqlDr = "SELECT u.id, u.email, u.password_hash, u.name, u.phone, u.mid, "
+        "p.truck, p.status, p.license, p.exp, p.max_c, p.cur_l "
+        "FROM offline_users u "
+        "JOIN offline_driver_profiles p ON u.id = p.uid "
+        "WHERE u.role = 'DRIVER';";
+
+    if (sqlite3_prepare_v2(localDB, sqlDr.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            // Дані з таблиці users
+            std::string id = (const char*)sqlite3_column_text(stmt, 0);
+            std::string email = (const char*)sqlite3_column_text(stmt, 1);
+            std::string pass = (const char*)sqlite3_column_text(stmt, 2);
+            std::string name = (const char*)sqlite3_column_text(stmt, 3);
+            std::string phone = (const char*)sqlite3_column_text(stmt, 4);
+            std::string mid = (const char*)sqlite3_column_text(stmt, 5);
+            // Дані з профілю
+            std::string truck = (const char*)sqlite3_column_text(stmt, 6);
+            std::string stat = (const char*)sqlite3_column_text(stmt, 7);
+            std::string lic = (const char*)sqlite3_column_text(stmt, 8);
+            int exp = sqlite3_column_int(stmt, 9);
+            int max_c = sqlite3_column_int(stmt, 10);
+            int cur_l = sqlite3_column_int(stmt, 11);
+
+            // Крок А: Запис у глобальну users
+            std::string q1 = "INSERT INTO users (id, email, password_hash, name, phone, role, managed_by_id) VALUES ('" +
+                id + "','" + email + "','" + pass + "','" + name + "','" + phone + "','DRIVER','" + mid + "') ON CONFLICT DO NOTHING;";
+            PQclear(PQexec(conn, q1.c_str()));
+
+            // Крок Б: Запис у глобальну driver_profiles
+            std::string q2 = "INSERT INTO driver_profiles (user_id, assigned_truck_id, status, license_type, experience_years, max_capacity, current_load) VALUES ('" +
+                id + "','" + truck + "','" + stat + "','" + lic + "'," + std::to_string(exp) + "," + std::to_string(max_c) + "," + std::to_string(cur_l) + ") ON CONFLICT DO NOTHING;";
+            PQclear(PQexec(conn, q2.c_str()));
+
+            totalSynced++;
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    // ==========================================================
+    // 2. СИНХРОНІЗАЦІЯ МЕНЕДЖЕРІВ (Users + Manager_Profiles)
+    // ==========================================================
+    std::string sqlMg = "SELECT u.id, u.email, u.password_hash, u.name, u.phone, u.mid, "
+        "p.dept, p.region, p.px, p.py "
+        "FROM offline_users u "
+        "JOIN offline_manager_profiles p ON u.id = p.uid "
+        "WHERE u.role = 'MANAGER';";
+
+    if (sqlite3_prepare_v2(localDB, sqlMg.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            std::string id = (const char*)sqlite3_column_text(stmt, 0);
+            std::string email = (const char*)sqlite3_column_text(stmt, 1);
+            std::string pass = (const char*)sqlite3_column_text(stmt, 2);
+            std::string name = (const char*)sqlite3_column_text(stmt, 3);
+            std::string phone = (const char*)sqlite3_column_text(stmt, 4);
+            std::string mid = (const char*)sqlite3_column_text(stmt, 5);
+            std::string dept = (const char*)sqlite3_column_text(stmt, 6);
+            std::string reg = (const char*)sqlite3_column_text(stmt, 7);
+            double px = sqlite3_column_double(stmt, 8);
+            double py = sqlite3_column_double(stmt, 9);
+
+            std::string q1 = "INSERT INTO users (id, email, password_hash, name, phone, role, managed_by_id) VALUES ('" +
+                id + "','" + email + "','" + pass + "','" + name + "','" + phone + "','MANAGER','" + mid + "') ON CONFLICT DO NOTHING;";
+            PQclear(PQexec(conn, q1.c_str()));
+
+            std::string q2 = "INSERT INTO manager_profiles (user_id, department, managed_region, px, py) VALUES ('" +
+                id + "','" + dept + "','" + reg + "'," + std::to_string(px) + "," + std::to_string(py) + ") ON CONFLICT DO NOTHING;";
+            PQclear(PQexec(conn, q2.c_str()));
+
+            totalSynced++;
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    // ==========================================================
+    // 3. СИНХРОНІЗАЦІЯ ДИРЕКТОРІВ (Users + Director_Profiles)
+    // ==========================================================
+    std::string sqlDir = "SELECT u.id, u.email, u.password_hash, u.name, u.phone, "
+        "p.company, p.clearance "
+        "FROM offline_users u "
+        "JOIN offline_director_profiles p ON u.id = p.uid "
+        "WHERE u.role = 'DIRECTOR';";
+
+    if (sqlite3_prepare_v2(localDB, sqlDir.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            std::string id = (const char*)sqlite3_column_text(stmt, 0);
+            std::string email = (const char*)sqlite3_column_text(stmt, 1);
+            std::string pass = (const char*)sqlite3_column_text(stmt, 2);
+            std::string name = (const char*)sqlite3_column_text(stmt, 3);
+            std::string phone = (const char*)sqlite3_column_text(stmt, 4);
+            std::string comp = (const char*)sqlite3_column_text(stmt, 5);
+            int clear = sqlite3_column_int(stmt, 6);
+
+            std::string q1 = "INSERT INTO users (id, email, password_hash, name, phone, role) VALUES ('" +
+                id + "','" + email + "','" + pass + "','" + name + "','" + phone + "','DIRECTOR') ON CONFLICT DO NOTHING;";
+            PQclear(PQexec(conn, q1.c_str()));
+
+            std::string q2 = "INSERT INTO director_profiles (user_id, company_name, clearance_level) VALUES ('" +
+                id + "','" + comp + "'," + std::to_string(clear) + ") ON CONFLICT DO NOTHING;";
+            PQclear(PQexec(conn, q2.c_str()));
+
+            totalSynced++;
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    // ==========================================================
+    // 4. СИНХРОНІЗАЦІЯ ДИСПЕТЧЕРІВ (Тільки Users)
+    // ==========================================================
+    std::string sqlDisp = "SELECT id, email, password_hash, name, phone, mid FROM offline_users WHERE role = 'DISPATCHER';";
+    if (sqlite3_prepare_v2(localDB, sqlDisp.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            std::string id = (const char*)sqlite3_column_text(stmt, 0);
+            std::string email = (const char*)sqlite3_column_text(stmt, 1);
+            std::string pass = (const char*)sqlite3_column_text(stmt, 2);
+            std::string name = (const char*)sqlite3_column_text(stmt, 3);
+            std::string phone = (const char*)sqlite3_column_text(stmt, 4);
+            std::string mid = (const char*)sqlite3_column_text(stmt, 5);
+
+            std::string pg = "INSERT INTO users (id, email, password_hash, name, phone, role, managed_by_id) VALUES ('" +
+                id + "','" + email + "','" + pass + "','" + name + "','" + phone + "','DISPATCHER','" + mid + "') ON CONFLICT DO NOTHING;";
+            PQclear(PQexec(conn, pg.c_str()));
+            totalSynced++;
+        }
+        sqlite3_finalize(stmt);
+    }
+
+    // ОЧИЩЕННЯ ПІСЛЯ УСПІХУ
+    if (totalSynced > 0) {
+        sqlite3_exec(localDB, "DELETE FROM offline_users; DELETE FROM offline_driver_profiles; DELETE FROM offline_manager_profiles; DELETE FROM offline_director_profiles;", 0, 0, 0);
+        std::cout << "[СИНХРОНІЗАЦІЯ] Успішно передано записів: " << totalSynced << std::endl;
+    }
+    else {
+        std::cout << "[СИНХРОНІЗАЦІЯ] Локальна база порожня." << std::endl;
+    }
+}
+
+void StorageManager::registerAccount(const std::string& id, const std::string& email, const std::string& phone, const std::string& password, const std::string& role, const std::string& name) {
+    if (conn == nullptr) return;
+
+    // 1. Запис у головну таблицю USERS
+    std::string sqlUser = "INSERT INTO users (id, email, phone, password_hash, role, name, is_online) VALUES ('" +
+        id + "', '" + email + "', '" + phone + "', '" + password + "', '" + role + "', '" + name + "', FALSE) " +
+        "ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, email = EXCLUDED.email;";
+
+    std::cout << "[DEBUG SQL]: " << sqlUser << std::endl; // ТУТ ТИ ПОБАЧИШ, ЧИ ПРАВИЛЬНИЙ ID
+
+    PGresult* res = PQexec(conn, sqlUser.c_str());
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        std::cerr << "Помилка таблиці users: " << PQerrorMessage(conn) << std::endl;
+        PQclear(res); return;
+    }
     PQclear(res);
+
+    // 2. Створення порожнього профілю
+    std::string sqlProf = "";
+    if (role == "DRIVER") sqlProf = "INSERT INTO driver_profiles (user_id, status) VALUES ('" + id + "', 'IDLE') ON CONFLICT DO NOTHING;";
+    else if (role == "MANAGER") sqlProf = "INSERT INTO manager_profiles (user_id) VALUES ('" + id + "') ON CONFLICT DO NOTHING;";
+    else if (role == "DIRECTOR") sqlProf = "INSERT INTO director_profiles (user_id) VALUES ('" + id + "') ON CONFLICT DO NOTHING;";
+
+    if (!sqlProf.empty()) PQclear(PQexec(conn, sqlProf.c_str()));
 }
 
-void StorageManager::saveToDiskBinary() {
-    std::string tmpFile = dbFilename + ".tmp";
-    std::ofstream out(tmpFile, std::ios::binary);
-    if (!out.is_open()) return;
+std::string StorageManager::login(const std::string& email, const std::string& password) {
+    if (conn == nullptr) return "ERROR";
 
-    auto writeStr = [&out](const std::string& str) {
-        size_t size = str.size();
-        out.write(reinterpret_cast<const char*>(&size), sizeof(size));
-        out.write(str.c_str(), size);
-        };
-    {
-        std::shared_lock<SharedMutex> lock(warehouseMutex);
-        size_t wSize = warehouses.size();
-        out.write(reinterpret_cast<const char*>(&wSize), sizeof(wSize));
-        for (const auto& [id, w] : warehouses) {
-            out.write(reinterpret_cast<const char*>(&w.id), sizeof(w.id));
-            out.write(reinterpret_cast<const char*>(&w.px), sizeof(w.px));
-            out.write(reinterpret_cast<const char*>(&w.py), sizeof(w.py));
-            size_t invSize = w.inventory.size();
-            out.write(reinterpret_cast<const char*>(&invSize), sizeof(invSize));
-            for (const auto& [itemName, count] : w.inventory) {
-                writeStr(itemName);
-                out.write(reinterpret_cast<const char*>(&count), sizeof(count));
-            }
-        }
+    std::string sql = "SELECT id, password_hash, role FROM users WHERE email = '" + email + "';";
+    PGresult* res = PQexec(conn, sql.c_str());
+
+    if (PQntuples(res) == 0) {
+        PQclear(res); return "USER_NOT_FOUND";
     }
 
-    {
-        std::shared_lock<SharedMutex> lock(requestMutex);
-        size_t rSize = requests.size();
-        out.write(reinterpret_cast<const char*>(&rSize), sizeof(rSize));
-        for (const auto& [id, r] : requests) {
-            out.write(reinterpret_cast<const char*>(&r.id), sizeof(r.id));
-            out.write(reinterpret_cast<const char*>(&r.timestamp), sizeof(r.timestamp));
-            out.write(reinterpret_cast<const char*>(&r.priority), sizeof(r.priority));
-            writeStr(r.itemNeeded);
-            out.write(reinterpret_cast<const char*>(&r.px), sizeof(r.px));
-            out.write(reinterpret_cast<const char*>(&r.py), sizeof(r.py));
-            out.write(reinterpret_cast<const char*>(&r.targetPx), sizeof(r.targetPx));
-            out.write(reinterpret_cast<const char*>(&r.targetPy), sizeof(r.targetPy));
-            out.write(reinterpret_cast<const char*>(&r.currentLoad), sizeof(r.currentLoad));
-            out.write(reinterpret_cast<const char*>(&r.itemWeight), sizeof(r.itemWeight));
-            out.write(reinterpret_cast<const char*>(&r.maxCapacity), sizeof(r.maxCapacity));
-        }
-    }
+    std::string dbPass = PQgetvalue(res, 0, 1);
+    std::string role = PQgetvalue(res, 0, 2);
+    std::string uid = PQgetvalue(res, 0, 0);
+    PQclear(res);
 
-    {
-        std::shared_lock<SharedMutex> lock(peopleMutex);
-        size_t dSize = directors.size();
-        out.write(reinterpret_cast<const char*>(&dSize), sizeof(dSize));
-        for (const auto& [id, d] : directors) {
-            writeStr(d.id); writeStr(d.name); writeStr(d.email); writeStr(d.phone); writeStr(d.role);
-            out.write(reinterpret_cast<const char*>(&d.isOnline), sizeof(d.isOnline));
-            writeStr(d.companyName);
-            out.write(reinterpret_cast<const char*>(&d.clearanceLevel), sizeof(d.clearanceLevel));
-        }
+    if (dbPass != password) return "WRONG_PASSWORD";
 
-        size_t mSize = managers.size();
-        out.write(reinterpret_cast<const char*>(&mSize), sizeof(mSize));
-        for (const auto& [id, m] : managers) {
-            writeStr(m.id); writeStr(m.name); writeStr(m.email); writeStr(m.phone); writeStr(m.role);
-            out.write(reinterpret_cast<const char*>(&m.isOnline), sizeof(m.isOnline));
-            writeStr(m.department); writeStr(m.managedRegion); writeStr(m.managedById);
-        }
-
-        size_t dispSize = dispatchers.size();
-        out.write(reinterpret_cast<const char*>(&dispSize), sizeof(dispSize));
-        for (const auto& [id, disp] : dispatchers) {
-            writeStr(disp.id); writeStr(disp.name); writeStr(disp.email); writeStr(disp.phone); writeStr(disp.role);
-            out.write(reinterpret_cast<const char*>(&disp.isOnline), sizeof(disp.isOnline));
-            writeStr(disp.managedById);
-        }
-
-        size_t drSize = drivers.size();
-        out.write(reinterpret_cast<const char*>(&drSize), sizeof(drSize));
-        for (const auto& [id, dr] : drivers) {
-            writeStr(dr.id); writeStr(dr.name); writeStr(dr.email); writeStr(dr.phone); writeStr(dr.role);
-            out.write(reinterpret_cast<const char*>(&dr.isOnline), sizeof(dr.isOnline));
-            writeStr(dr.assignedTruckId); writeStr(dr.status); writeStr(dr.licenseType);
-            out.write(reinterpret_cast<const char*>(&dr.experienceYears), sizeof(dr.experienceYears));
-            out.write(reinterpret_cast<const char*>(&dr.px), sizeof(dr.px));
-            out.write(reinterpret_cast<const char*>(&dr.py), sizeof(dr.py));
-            out.write(reinterpret_cast<const char*>(&dr.maxCapacity), sizeof(dr.maxCapacity));
-            out.write(reinterpret_cast<const char*>(&dr.currentLoad), sizeof(dr.currentLoad));
-            writeStr(dr.managedById);
-        }
-    }
-
-    out.close();
-    std::filesystem::rename(tmpFile, dbFilename);
+    // Оновлюємо статус
+    PQclear(PQexec(conn, ("UPDATE users SET is_online = TRUE WHERE id = '" + uid + "';").c_str()));
+    return role;
 }
 
-void StorageManager::loadFromDiskBinary() {
-    std::ifstream in(dbFilename, std::ios::binary);
-    if (!in.is_open()) return;
+void StorageManager::logout(const std::string& userId, const std::string& role) {
+    if (conn != nullptr) {
+        // Оновлюємо статус у глобальній БД
+        std::string sql = "UPDATE users SET is_online = FALSE WHERE id = '" + userId + "';";
+        PQclear(PQexec(conn, sql.c_str()));
+    }
 
-    auto readStr = [&in]() -> std::string {
-        size_t size;
-        in.read(reinterpret_cast<char*>(&size), sizeof(size));
-        std::string str(size, '\0');
-        in.read(&str[0], size);
-        return str;
-        };
-
+    // Оновлюємо локальні мапи (тепер змінні conn, drivers, peopleMutex будуть знайдені)
     {
-        std::unique_lock<SharedMutex> lock(warehouseMutex);
-        warehouses.clear();
-        size_t wSize;
-        if (in.read(reinterpret_cast<char*>(&wSize), sizeof(wSize))) {
-            for (size_t i = 0; i < wSize; ++i) {
-                Warehouse w;
-                in.read(reinterpret_cast<char*>(&w.id), sizeof(w.id));
-                in.read(reinterpret_cast<char*>(&w.px), sizeof(w.px));
-                in.read(reinterpret_cast<char*>(&w.py), sizeof(w.py));
-                size_t invSize;
-                in.read(reinterpret_cast<char*>(&invSize), sizeof(invSize));
-                for (size_t j = 0; j < invSize; ++j) {
-                    std::string itemName = readStr();
-                    int count;
-                    in.read(reinterpret_cast<char*>(&count), sizeof(count));
-                    w.inventory[itemName] = count;
-                }
-                warehouses[w.id] = w;
-            }
-        }
+        UniqueLock lock(peopleMutex);
+        if (role == "DRIVER" && drivers.count(userId)) drivers[userId].isOnline = false;
+        else if (role == "MANAGER" && managers.count(userId)) managers[userId].isOnline = false;
+        else if (role == "DISPATCHER" && dispatchers.count(userId)) dispatchers[userId].isOnline = false;
+        else if (role == "DIRECTOR" && directors.count(userId)) directors[userId].isOnline = false;
     }
-
-    {
-        std::unique_lock<SharedMutex> lock(requestMutex);
-        requests.clear();
-        size_t rSize;
-        if (in.read(reinterpret_cast<char*>(&rSize), sizeof(rSize))) {
-            for (size_t i = 0; i < rSize; ++i) {
-                Request r;
-                in.read(reinterpret_cast<char*>(&r.id), sizeof(r.id));
-                in.read(reinterpret_cast<char*>(&r.timestamp), sizeof(r.timestamp));
-                in.read(reinterpret_cast<char*>(&r.priority), sizeof(r.priority));
-                r.itemNeeded = readStr();
-                in.read(reinterpret_cast<char*>(&r.px), sizeof(r.px));
-                in.read(reinterpret_cast<char*>(&r.py), sizeof(r.py));
-                in.read(reinterpret_cast<char*>(&r.targetPx), sizeof(r.targetPx));
-                in.read(reinterpret_cast<char*>(&r.targetPy), sizeof(r.targetPy));
-                in.read(reinterpret_cast<char*>(&r.currentLoad), sizeof(r.currentLoad));
-                in.read(reinterpret_cast<char*>(&r.itemWeight), sizeof(r.itemWeight));
-                in.read(reinterpret_cast<char*>(&r.maxCapacity), sizeof(r.maxCapacity));
-                requests[r.id] = r;
-            }
-        }
-    }
-
-    {
-        std::unique_lock<SharedMutex> lock(peopleMutex);
-        directors.clear(); managers.clear(); dispatchers.clear(); drivers.clear();
-
-        size_t dSize;
-        if (in.read(reinterpret_cast<char*>(&dSize), sizeof(dSize))) {
-            for (size_t i = 0; i < dSize; ++i) {
-                Director d;
-                d.id = readStr(); d.name = readStr(); d.email = readStr(); d.phone = readStr(); d.role = readStr();
-                in.read(reinterpret_cast<char*>(&d.isOnline), sizeof(d.isOnline));
-                d.companyName = readStr();
-                in.read(reinterpret_cast<char*>(&d.clearanceLevel), sizeof(d.clearanceLevel));
-                directors[d.id] = d;
-            }
-        }
-
-        size_t mSize;
-        if (in.read(reinterpret_cast<char*>(&mSize), sizeof(mSize))) {
-            for (size_t i = 0; i < mSize; ++i) {
-                Manager m;
-                m.id = readStr(); m.name = readStr(); m.email = readStr(); m.phone = readStr(); m.role = readStr();
-                in.read(reinterpret_cast<char*>(&m.isOnline), sizeof(m.isOnline));
-                m.department = readStr(); m.managedRegion = readStr(); m.managedById = readStr();
-                managers[m.id] = m;
-            }
-        }
-
-        size_t dispSize;
-        if (in.read(reinterpret_cast<char*>(&dispSize), sizeof(dispSize))) {
-            for (size_t i = 0; i < dispSize; ++i) {
-                Dispatcher disp;
-                disp.id = readStr(); disp.name = readStr(); disp.email = readStr(); disp.phone = readStr(); disp.role = readStr();
-                in.read(reinterpret_cast<char*>(&disp.isOnline), sizeof(disp.isOnline));
-                disp.managedById = readStr();
-                dispatchers[disp.id] = disp;
-            }
-        }
-
-        size_t drSize;
-        if (in.read(reinterpret_cast<char*>(&drSize), sizeof(drSize))) {
-            for (size_t i = 0; i < drSize; ++i) {
-                Driver dr;
-                dr.id = readStr(); dr.name = readStr(); dr.email = readStr(); dr.phone = readStr(); dr.role = readStr();
-                in.read(reinterpret_cast<char*>(&dr.isOnline), sizeof(dr.isOnline));
-                dr.assignedTruckId = readStr(); dr.status = readStr(); dr.licenseType = readStr();
-                in.read(reinterpret_cast<char*>(&dr.experienceYears), sizeof(dr.experienceYears));
-                in.read(reinterpret_cast<char*>(&dr.px), sizeof(dr.px));
-                in.read(reinterpret_cast<char*>(&dr.py), sizeof(dr.py));
-                in.read(reinterpret_cast<char*>(&dr.maxCapacity), sizeof(dr.maxCapacity));
-                in.read(reinterpret_cast<char*>(&dr.currentLoad), sizeof(dr.currentLoad));
-                dr.managedById = readStr();
-                drivers[dr.id] = dr;
-            }
-        }
-    }
-}
-
-void StorageManager::saverLoop() {
-    while (keepRunning) {
-        for (int i = 0; i < 100 && keepRunning; ++i) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-        if (keepRunning) saveToDiskBinary();
-    }
+    std::cout << "[AUTH] Користувач " << userId << " вийшов із системи." << std::endl;
 }
