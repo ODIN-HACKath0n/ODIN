@@ -52,6 +52,5 @@ double getDeviationFactor(Priority p);
 
 class ResourceFinder {
 public:
-    // ОСЬ ТУТ НАША ФУНКЦІЯ З 2 АРГУМЕНТАМИ
     static std::shared_ptr<Warehouse> findBestPath(const Request& req, const std::vector<std::shared_ptr<Warehouse>>& allWarehouses);
-};  
+};
