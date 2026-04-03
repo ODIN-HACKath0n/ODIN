@@ -1,9 +1,16 @@
-body {
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+}
+
+.page-wrapper {
   min-height: 100vh;
   background-color: #c6d6e6;
-  background-image: url("./images/bgr_light.png");
+  background-image: url("/bgr_light.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -11,6 +18,7 @@ body {
   justify-content: center;
   align-items: center;
   font-family: "Montserrat", sans-serif;
+  position: relative;
 }
 
 .brand-logo {
@@ -49,7 +57,6 @@ body {
   justify-content: flex-start;
   padding: 7px 3px;
   height: 32px;
-  box-sizing: border-box;
   cursor: pointer;
   gap: 10px;
 }
@@ -75,37 +82,41 @@ body {
   opacity: 1;
 }
 
-/* --- ПЕРЕМИКАЧ ТЕМИ --- */
 .theme-switch {
-  gap: 10px;
+  gap: 6px;
   padding: 4px 6px;
-  /* Тут трохи інші відступи через кружечок */
+  align-items: center;
 }
 
-/* Місяць (неактивний) */
+.icon-wrapper {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+}
+
+
+.icon-wrapper svg {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .moon-icon {
   color: rgba(255, 255, 255, 0.7);
-  margin-left: 4px;
+  margin: 0;
 }
 
-/* Сонце (активне - у зеленому кружечку) */
 .active-sun {
-  background: #22c55e;
-  /* Наш фірмовий зелений */
+  background: rgba(34, 197, 94, 0.8);
   border-radius: 50%;
-  /* Робимо ідеальний круг */
   width: 26px;
   height: 26px;
   display: flex;
   justify-content: center;
   align-items: center;
   box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
-  /* Легке зелене світіння */
-}
-
-.active-sun svg {
   color: #ffffff;
-  /* Біла іконка сонця */
 }
 
 .login-card {
@@ -121,7 +132,6 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-sizing: border-box;
 }
 
 .login-card h2 {
@@ -149,7 +159,7 @@ input {
   font-size: 16px;
   font-weight: 700;
   outline: none;
-  color: #94a3b8;
+  color: #4a5568;
   font-family: "Montserrat", sans-serif;
 }
 
@@ -180,7 +190,6 @@ input::placeholder {
   background: rgba(34, 197, 94, 0.8);
   border: none;
   border-radius: 12px;
-  box-sizing: border-box;
   cursor: pointer;
   margin-top: -10px;
   color: #ffffff;
@@ -190,7 +199,7 @@ input::placeholder {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: all 0.3s ease;
-  box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.5);
 }
 
 .login-btn:hover {
@@ -206,7 +215,6 @@ input::placeholder {
   background: rgba(255, 255, 255, 0.2);
   border: none;
   border-radius: 12px;
-  box-sizing: border-box;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -269,12 +277,110 @@ input::placeholder {
   color: rgba(22, 63, 131, 0.64);
 }
 
-.secure-text svg {
-  width: 15px;
-  height: 15px;
-  opacity: 0.8;
+/* ============================================
+   ТЕМНА ТЕМА — додати в кінець App.css
+   ============================================ */
+
+.dark .page-wrapper {
+  background-color: #0B0F1A;
+  background-image: url("/bgr_dark.png");
 }
 
-.secure-text svg path {
-  fill: rgba(22, 63, 131, 0.64);
+.dark .top-controls {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
+
+.dark .control-pill {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+.dark .lang-switch {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.dark .lang-switch .active {
+  color: #ffffff;
+}
+
+.dark .lang-switch .separator {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.active-moon {
+  background: rgba(11, 15, 26, 0.69);
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(35, 46, 62, 0.4);
+  color: #ffffff;
+}
+
+.dark .icon-wrapper svg {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dark .login-card {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.dark .login-card h2 {
+  color: #ffffff;
+}
+
+.dark input {
+  background: rgba(5, 8, 16, 0.4);
+  border: 1px solid #334155;
+  color: #94A3B8;
+}
+
+.dark input::placeholder {
+  color: rgba(148, 163, 184, 0.5);
+  opacity: 1;
+}
+
+.dark .forgot-password {
+  color: rgba(255, 255, 255, 0.81);
+}
+
+.dark .forgot-password:hover {
+  color: #ffffff;
+}
+
+.dark .google-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.dark .google-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.dark .signup-link {
+  color: #ffffff;
+}
+
+.dark .signup-link a {
+  color: #1AC35A;
+}
+
+.dark .signup-link a:hover {
+  color: #69ffa0;
+  text-decoration: underline;
+}
+
+.dark .divider {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.dark .secure-text {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.dark .secure-text path {
+  fill: rgba(255, 255, 255, 0.3);
+} 

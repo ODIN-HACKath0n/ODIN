@@ -78,7 +78,7 @@
       <h2>Вхід в систему</h2>
 
       <div class="input-group">
-        <input type="text" placeholder="ID Користувача" />
+        <input type="text" placeholder="Електронна пошта" />
       </div>
 
       <div class="input-group">
@@ -120,5 +120,17 @@
     </div>
 
     <script src="app.js"></script>
+
+    <script>
+    // Знаходимо нашу кнопку перемикання теми
+    const themeBtn = document.querySelector('.theme-switch');
+
+    // Вішаємо "слухача": коли на кнопку клікають, виконується ця функція
+    themeBtn.addEventListener('click', () => {
+      // Додаємо або забираємо клас 'dark-theme' у тега body
+      document.body.classList.toggle('dark-theme');
+    });
+  </script>
+
   </body>
 </html>
