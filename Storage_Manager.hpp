@@ -1,5 +1,5 @@
 #pragma once
-#include "Algoritm_Path.hpp" 
+#include "Algorithm_Path.hpp" 
 #include "sqlite3.h"
 #include <shared_mutex>
 #include <unordered_map>
@@ -12,7 +12,6 @@
 
 class StorageManager;
 
-// === ІЄРАРХІЯ КОРИСТУВАЧІВ ===
 class Person {
 public:
     std::string id, name, email, password, phone, role;
@@ -88,7 +87,6 @@ public:
     void createWarehouse(StorageManager& db, const Warehouse& w);
 };
 
-// === ТИПІЗАЦІЯ МАП (Повертаємо те, що я випадково видалив) ===
 typedef std::shared_mutex SharedMutex;
 typedef std::unordered_map<int, Warehouse> WarehouseMap;
 typedef std::unordered_map<unsigned int, Request> RequestMap;
@@ -97,7 +95,6 @@ typedef std::unordered_map<std::string, Director> DirectorMap;
 typedef std::unordered_map<std::string, Dispatcher> DispatcherMap;
 typedef std::unordered_map<std::string, Driver> DriverMap;
 
-// === ГОЛОВНИЙ КЛАС БД ===
 class StorageManager {
 private:
     WarehouseMap warehouses;
@@ -118,18 +115,15 @@ public:
     ~StorageManager();
     void testConnection();
 
-    // Авторизація та Реєстрація
     void registerAccount(const std::string& id, const std::string& email, const std::string& phone, const std::string& password, const std::string& role, const std::string& name = "New User");
     std::string login(const std::string& email, const std::string& password);
     void logout(const std::string& userId, const std::string& role);
 
-    // Гетери
     std::vector<Driver> getOnlineDrivers() const;
     std::vector<Person> getAllOnlineStaff() const;
     std::vector<Request> getSortedRequests() const;
     std::vector<std::shared_ptr<Warehouse>> getWarehousesList() const;
 
-    // Внутрішні методи запису
     void internalAddManager(const Manager& m);
     void internalAddDispatcher(const Dispatcher& d);
     void internalAddDriver(const Driver& d);
@@ -138,11 +132,11 @@ public:
     void internalUpdateManagerLocation(const std::string& managerId, double px, double py);
     void internalAddWarehouse(const Warehouse& w);
     void internalAddDirector(const Director& d);
+    std::unordered_map<std::string, std::string> getUserAuthData(const std::string& email);
 
-    // Синхронізація
+    const Person* getPersonById(const std::string& personId) const;
+    void castPersonByRole(const Person* person) const;
+
     void syncOfflineData();
     void loadFromSQL();
 };
-
-const Person* getPersonById(std::string& personId);
-void castPersonByRole(const Person* person);
