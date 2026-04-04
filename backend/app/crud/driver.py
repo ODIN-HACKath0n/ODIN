@@ -1,45 +1,54 @@
-from sqlalchemy.orm import Session
-from ..database.models import Driver
 import uuid
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, Sequence
+from sqlalchemy.orm import selectinload
+
+from database.models import Driver
 
 
 # ==========================================
 # 1. READ (Читання даних)
 # ==========================================
 
-def get_driver_by_id(db: Session, driver_id: uuid.UUID):
+async def get_driver_by_id(db: AsyncSession, driver_id: uuid.UUID) -> Driver:
     """Шукає одного водія за його ID (Аналог: SELECT * FROM drivers WHERE user_id = ...)"""
-    return db.query(Driver).filter(Driver.user_id == driver_id).first()
+    stmt = select(Driver).where(Driver.user_id == driver_id).options(selectinload(Driver.user))
+    result = await db.execute(stmt)
+    return result.scalars().first()
 
 
-def get_all_drivers(db: Session, skip: int = 0, limit: int = 100):
+async def get_all_drivers(db: AsyncSession, skip: int = 0, limit: int = 100) -> Sequence[Driver]:
     """Повертає список водіїв з пагінацією (Аналог: SELECT * FROM drivers LIMIT 100 OFFSET 0)"""
-    return db.query(Driver).offset(skip).limit(limit).all()
+    stmt = select(Driver).offset(skip).limit(limit)
+    result = await db.execute(stmt)
+    return result.scalars().all()
 
 
 # ==========================================
 # 2. CREATE (Створення запису)
 # ==========================================
 
-def create_driver(db: Session, dispatcher_id: uuid.UUID, license_type: str, experience_years: int):
+async def create_driver(db: AsyncSession, user_id: uuid.UUID, dispatcher_id: uuid.UUID, license_type: str,
+                        experience_years: int) -> Driver:
     """Створює нового водія в БД (Аналог: INSERT INTO drivers ...)"""
 
-    # Крок 1: Створюємо Python-об'єкт нашої моделі
+    # Зверніть увагу: я додав user_id як обов'язкове поле, бо це Primary Key
     new_driver = Driver(
+        user_id=user_id,
         dispatcher_id=dispatcher_id,
         license_type=license_type,
         experience_years=experience_years,
         status="Free"  # Статус за замовчуванням
     )
 
-    # Крок 2: Додаємо його в сесію (готуємо до відправки)
+    # Додаємо в сесію (синхронно)
     db.add(new_driver)
 
-    # Крок 3: Фізично зберігаємо в базу (робимо COMMIT)
-    db.commit()
+    # Фізично зберігаємо в базу (асинхронно)
+    await db.commit()
 
-    # Крок 4: Оновлюємо об'єкт, щоб БД повернула нам його згенерований ID
-    db.refresh(new_driver)
+    # Оновлюємо об'єкт (асинхронно)
+    await db.refresh(new_driver)
 
     return new_driver
 
@@ -48,32 +57,46 @@ def create_driver(db: Session, dispatcher_id: uuid.UUID, license_type: str, expe
 # 3. UPDATE (Оновлення запису)
 # ==========================================
 
-def update_driver_status(db: Session, driver_id: uuid.UUID, new_status: str):
+async def update_driver_status(db: AsyncSession, driver_id: uuid.UUID, new_status: str):
     """Змінює статус водія (Аналог: UPDATE drivers SET status = ... WHERE user_id = ...)"""
 
-    # Спочатку знаходимо водія
-    driver = get_driver_by_id(db, driver_id)
+    # Спочатку знаходимо водія (асинхронно)
+    driver = await get_driver_by_id(db, driver_id)
     if not driver:
         return None  # Якщо такого водія немає
 
-    # Змінюємо поле
+    # Змінюємо поле в пам'яті
     driver.status = new_status
 
-    # Зберігаємо зміни
-    db.commit()
-    db.refresh(driver)
+    # Зберігаємо зміни (асинхронно)
+    await db.commit()
+    await db.refresh(driver)
     return driver
 
+async def set_driver_transport(db: AsyncSession, driver_db: Driver, new_transport: uuid.UUID):
+    """Змінює транспорт водія (Аналог: UPDATE drivers SET transport_id = ... WHERE user_id = ...)"""
+
+    # Змінюємо поле в пам'яті
+    driver_db.assigned_transport_id = new_transport
+
+    # Зберігаємо зміни (асинхронно)
+    await db.commit()
+    await db.refresh(driver_db)
+    return driver_db
 
 # ==========================================
 # 4. DELETE (Видалення запису)
 # ==========================================
 
-def delete_driver(db: Session, driver_id: uuid.UUID):
+async def delete_driver(db: AsyncSession, driver_id: uuid.UUID) -> bool:
     """Видаляє водія (Аналог: DELETE FROM drivers WHERE user_id = ...)"""
-    driver = get_driver_by_id(db, driver_id)
+    # Знаходимо водія (асинхронно)
+    driver = await get_driver_by_id(db, driver_id)
+
     if driver:
-        db.delete(driver)
-        db.commit()
+        # Видаляємо та комітимо (асинхронно)
+        await db.delete(driver)
+        await db.commit()
         return True
+
     return False

@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy import Column, String, Text, Boolean, Integer, Numeric, ForeignKey, DateTime, SmallInteger
-from sqlalchemy.dialects.postgresql import UUID, JSONB, DATE
+from sqlalchemy.dialects.postgresql import UUID, JSONB, DATE, CITEXT
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
 from geoalchemy2 import Geography
@@ -35,6 +35,8 @@ class Company(Base):
     registration_number = Column(String(50))
     address = Column(Text)
     bank_details = Column(String(50))
+    corporation_email = Column(Text)
+    domain = Column(CITEXT)
 
     # МАГІЯ PYTHON: Зв'язок (дозволяє витягнути всіх юзерів компанії кодом: my_company.users)
     users = relationship("User", back_populates="company")
@@ -47,7 +49,7 @@ class Driver(Base):
 
     # Тут user_id є одночасно і Primary Key, і Foreign Key до таблиці Users
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
-    assigned_truck_id = Column(UUID(as_uuid=True), ForeignKey("transports.truck_id"), nullable=True)
+    assigned_transport_id = Column(UUID(as_uuid=True), ForeignKey("transports.transport_id"), nullable=True)
     dispatcher_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True)
 
     license_type = Column(String(20))
@@ -106,7 +108,7 @@ class Shipment(Base):
 
     shipment_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     order_id = Column(UUID(as_uuid=True), ForeignKey("orders.order_id"))
-    truck_id = Column(UUID(as_uuid=True), ForeignKey("transports.truck_id"))
+    transport_id = Column(UUID(as_uuid=True), ForeignKey("transports.transport_id"))
     driver_id = Column(UUID(as_uuid=True), ForeignKey("drivers.user_id"))
     dispatcher_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"))
     quantity = Column(Numeric(10,2))
@@ -116,7 +118,7 @@ class Shipment(Base):
     waybill_number = Column(String(100))
 
     order = relationship("Order", backref="shipments")
-    truck = relationship("Transport", backref="shipments")
+    transport = relationship("Transport", backref="shipments")
     driver = relationship("Driver", foreign_keys=[driver_id])
     dispatcher = relationship("User", foreign_keys=[dispatcher_id])
 
@@ -128,7 +130,7 @@ class Telemetry(Base):
     __tablename__ = "telemetry"
 
     record_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    truck_id = Column(UUID(as_uuid=True), ForeignKey("transports.truck_id"))
+    transport_id = Column(UUID(as_uuid=True), ForeignKey("transports.transport_id"))
     shipment_id = Column(UUID(as_uuid=True), ForeignKey("shipments.shipment_id"))
     latitude = Column(Numeric(9,6))
     longitude = Column(Numeric(9,6))
@@ -142,7 +144,7 @@ class Telemetry(Base):
 class Transport(Base):
     __tablename__ = "transports"
 
-    truck_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    transport_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     company_id = Column(UUID(as_uuid=True), ForeignKey("companies.company_id"))
     weight_capacity = Column(Numeric(10,2))
     weight = Column(Numeric(10,2))

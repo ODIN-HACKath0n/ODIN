@@ -1,8 +1,10 @@
 import uuid
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-
-from database.models import User  # Використовуємо абсолютний імпорт
+from pydantic import EmailStr
+from database.models import User
+from database.schemas import UserRegistration
 
 # ==========================================
 # 1. READ (Читання записів)
@@ -14,6 +16,20 @@ async def get_user_by_id(db: AsyncSession, user_id: uuid.UUID):
     result = await db.execute(stmt)
     return result.scalars().first()
 
+async def get_user_by_email(db: AsyncSession, email: EmailStr):
+    stmt = select(User).where(User.email == email)
+    result = await db.execute(stmt)
+    return result.scalars().first()
+
+
+async def get_user_by_email_and_company(db: AsyncSession, email: str, company_id: uuid.UUID):
+    stmt = select(User).where(
+        User.email == email,
+        User.company_id == company_id
+    )
+
+    result = await db.execute(stmt)
+    return result.scalars().first()
 
 async def get_all_users(db: AsyncSession, skip: int = 0, limit: int = 100):
     """Повертає список користувачів з пагінацією (Аналог: SELECT * FROM users LIMIT 100 OFFSET 0)"""
@@ -26,20 +42,21 @@ async def get_all_users(db: AsyncSession, skip: int = 0, limit: int = 100):
 # 2. CREATE (Створення запису)
 # ==========================================
 
-async def create_user(db: AsyncSession, user_id: uuid.UUID, first_name: str, last_name: str, email: str, password: str, phone: str):
+async def create_user(db: AsyncSession, user_id: uuid.UUID, company_id: uuid.UUID | None, first_name: str, user_data: UserRegistration):
     """Створює нового користувача в БД (Аналог: INSERT INTO users ...)"""
 
-    existing_user = await get_user_by_id(db, user_id)
+    existing_user = await get_user_by_email(db, user_data.email)
     if existing_user:
-        raise ValueError(f"User with email '{email}' already exists")
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists")
 
     new_user = User(
         user_id = user_id,
+        company_id = company_id,
         first_name = first_name,
-        last_name = last_name,
-        email = email,
-        password = password,
-        phone = phone,
+        last_name = user_data.last_name,
+        email = user_data.email,
+        password = user_data.password,
+        phone = user_data.phone,
     )
 
     # Крок 2: Додаємо його в сесію (це синхронна операція в пам'яті, await не потрібен)
@@ -58,22 +75,25 @@ async def create_user(db: AsyncSession, user_id: uuid.UUID, first_name: str, las
 # 3. UPDATE (Оновлення запису)
 # ==========================================
 
-async def update_user_status(db: AsyncSession, user_id: uuid.UUID, new_status: str):
-    """Змінює статус користувача (Аналог: UPDATE users SET is_online = ... WHERE user_id = ...)"""
-
-    # Спочатку знаходимо користувача
+async def set_user_status(db: AsyncSession, user_id: uuid.UUID, user_status: bool):
     user = await get_user_by_id(db, user_id)
     if not user:
-        return None  # Якщо такого користувача немає
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not exists")
 
-    # Змінюємо поле (це просто зміна атрибута об'єкта в пам'яті)
-    user.is_online = new_status
+    user.is_online = user_status
 
-    # Зберігаємо зміни
     await db.commit()
     await db.refresh(user)
     return user
 
+async def set_user_company(db: AsyncSession, company_id: uuid.UUID, user_db: User):
+    if user_db.company_id:
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already registered to company")
+    user_db.company_id = company_id
+
+    await db.commit()
+    await db.refresh(user_db)
+    return user_db
 
 # ==========================================
 # 4. DELETE (Видалення запису)

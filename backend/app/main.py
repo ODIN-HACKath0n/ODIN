@@ -6,7 +6,7 @@ from sqlalchemy import text  # Для виконання сирих SQL-запи
 
 from database.session import get_db
 from auth.router import router as auth_router
-from api.routers import directors, dispatchers, drivers, requests, warehouses
+from api.routers import directors, dispatchers, drivers, requests, warehouses, company
 
 app = FastAPI(title="Hackaton API", version="1.0")
 
@@ -31,6 +31,7 @@ app.include_router(dispatchers.router)
 app.include_router(drivers.router)
 app.include_router(requests.router)
 app.include_router(warehouses.router)
+app.include_router(company.router)
 
 @app.get("/api/status", status_code=status.HTTP_200_OK, tags=["Статус"])
 def get_status():
