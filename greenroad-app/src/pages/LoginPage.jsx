@@ -61,10 +61,12 @@ export default function LoginPage() {
   return (
     <div className="page-wrapper">
       <div className="brand-logo">
-        <img
-          src={theme === "light" ? "/logo.svg" : "/logo.2.svg"}
-          alt="GreenRoad Logo"
-        />
+        <Link to="/">
+          <img
+            src={theme === "light" ? "/logo.svg" : "/logo.2.svg"}
+            alt="GreenRoad Logo"
+          />
+        </Link>
       </div>
 
       <div className="top-controls">
@@ -103,9 +105,9 @@ export default function LoginPage() {
             type="password"
             placeholder={lang === "UA" ? "Пароль" : "Password"}
           />
-          <a href="#" className="forgot-password">
+          <Link to="/forgot-password" className="forgot-password">
             {lang === "UA" ? "Забули пароль?" : "Forgot password?"}
-          </a>
+          </Link>
         </div>
 
         <button className="login-btn">

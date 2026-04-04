@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import { useState } from "react";
 
 function MoonIcon() {
   return (
@@ -40,8 +41,14 @@ function ShieldIcon() {
   );
 }
 
-export default function RegisterPage() {
+function CloudKeyIcon() {
+  return <img src="/cloud-key.svg" alt="icon" width={43} height={43} />;
+}
+
+export default function ForgotPasswordPage() {
   const { theme, toggleTheme, lang, toggleLang } = useApp();
+  const [sent, setSent] = useState(false); 
+  const [email, setEmail] = useState("");
 
   return (
     <div className="page-wrapper">
@@ -78,61 +85,51 @@ export default function RegisterPage() {
       </div>
 
       {/* Картка */}
-      <div className="login-card register-card">
-        <h2>{lang === "UA" ? "Реєстрація" : "Sign Up"}</h2>
+      <div className="login-card forgot-card">
+        <h2>{lang === "UA" ? "Відновлення паролю" : "Password recovery"}</h2>
 
-        <div className="input-group">
-          <input
-            type="text"
-            placeholder={lang === "UA" ? "Ім'я" : "First Name"}
-          />
+        <div className="forgot-icon">
+          <CloudKeyIcon />
         </div>
 
-        <div className="input-group">
-          <input
-            type="text"
-            placeholder={lang === "UA" ? "Прізвище" : "Last Name"}
-          />
-        </div>
+        <p className="forgot-description">
+          {lang === "UA"
+            ? "Введіть ваш Email, і ми надішлемо інструкції для скидання паролю"
+            : "Enter your Email and we will send you password reset instructions"}
+        </p>
 
         <div className="input-group">
           <input
             type="text"
             placeholder={lang === "UA" ? "Електронна пошта" : "Email"}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
-        <div className="input-group">
-          <input
-            type="password"
-            placeholder={lang === "UA" ? "Пароль" : "Password"}
-          />
-        </div>
-
-        <div className="input-group">
-          <input
-            type="tel"
-            placeholder={lang === "UA" ? "Номер телефону" : "Phone"}
-          />
-        </div>
-
-        <button className="login-btn">
-          {lang === "UA" ? "СТВОРИТИ АКАУНТ" : "CREATE ACCOUNT"}
-        </button>
-
-        <button className="google-btn">
-          <img
-            src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/google/google-original.svg"
-            alt="Google"
-          />
-          <span>
-            {lang === "UA" ? "Продовжити з Google" : "Continue with Google"}
-          </span>
-        </button>
+        {!sent ? (
+          <button
+            className="login-btn"
+            onClick={() => setSent(true)}
+            disabled={!email}
+          >
+            {lang === "UA" ? "НАДІСЛАТИ ПОСИЛАННЯ" : "SEND LINK"}
+          </button>
+        ) : (
+          <div className="sent-message">
+            <div>{lang === "UA" ? "Лист надіслано!" : "Email sent!"}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              {lang === "UA" ? "Перевірте пошту" : "Check your inbox"}
+              <img src="/mail.svg" alt="mail" width={18} height={18} />
+            </div>
+          </div>
+        )}
 
         <div className="signup-link">
-          {lang === "UA" ? "Вже маєте акаунт?" : "Already have an account?"}{" "}
-          <Link to="/">{lang === "UA" ? "Увійти" : "Sign In"}</Link>
+          {lang === "UA" ? "Згадали пароль?" : "Remember your password?"}{" "}
+          <Link to="/">
+            {lang === "UA" ? "Повернутися до входу" : "Back to Sign In"}
+          </Link>
         </div>
 
         <div className="divider" />
