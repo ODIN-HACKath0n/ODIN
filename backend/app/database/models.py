@@ -22,6 +22,8 @@ class Client(Base):
     email = Column(Text, nullable=False)
     billing_address = Column(Text, nullable=False)
 
+    company = relationship("Company", backref="clients")
+
 # ==========================================
 # Таблиця: Компанія
 # ==========================================
@@ -78,6 +80,9 @@ class Order(Base):
     pickup_address = Column(Geography(geometry_type='POINT', srid=4326))
     delivery_address = Column(Geography(geometry_type='POINT', srid=4326))
 
+    client = relationship("Client", backref="orders")
+    company = relationship("Company", backref="orders")
+
 # ==========================================
 # Таблиця: Оплата
 # ==========================================
@@ -109,6 +114,11 @@ class Shipment(Base):
     departure_date = Column(DateTime(timezone=True), server_default=func.now())
     arrival_date = Column(DateTime(timezone=True), server_default=func.now())
     waybill_number = Column(String(100))
+
+    order = relationship("Order", backref="shipments")
+    truck = relationship("Transport", backref="shipments")
+    driver = relationship("Driver", foreign_keys=[driver_id])
+    dispatcher = relationship("User", foreign_keys=[dispatcher_id])
 
 # ==========================================
 # Таблиця: Телеметрія
@@ -143,6 +153,7 @@ class Transport(Base):
     fuel_consumption_rate = Column(Numeric(5,2))
     next_maintenance_date = Column(DATE)
     current_position = Column(Geography(geometry_type='POINT', srid=4326))
+    status = Column(String(50), default="Free")
 
 # ==========================================
 # Таблиця: Користувачі
@@ -164,7 +175,12 @@ class User(Base):
 
     # Зв'язки
     company = relationship("Company", back_populates="users")
-    driver_profile = relationship("Driver", back_populates="user", uselist=False)
+    driver_profile = relationship(
+        "Driver",
+        back_populates="user",
+        uselist=False,
+        foreign_keys="[Driver.user_id]"
+    )
 
 # ==========================================
 # Таблиця: Склади

@@ -1,44 +1,62 @@
 # backend/app/auth/router.py
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
+from database.session import get_db
+from database.models import User
+from crud.user import create_user
 
 router = APIRouter(
     prefix="/auth",
     tags=["Authorization"]
 )
 
-class UserRegistrationRequest(BaseModel):
-    name: str
+class UserRegistration(BaseModel):
+    first_name: str
+    last_name: str
     email: str
-    phone: str
     password: str
-    role: str
+    phone: str
 
 class UserLogin(BaseModel):
     email: str
     password: str
 
+@router.post("/login_user", status_code=status.HTTP_200_OK)
+async def login_user(user: UserLogin, db: AsyncSession = Depends(get_db)):
+    stml = select(User).where(User.email == user.email)
+    result = await db.execute(stml)
+    db_user = result.scalars().first()
+    if not db_user:
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+    if not check_password_hash(db_user.password, user.password):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incorrect password")
 
-# @router.post("/login_user", status_code=status.HTTP_200_OK)
-# def login_user(user: UserLogin):
-#     auth_data = db_engine.get_user_auth_data(user.email)
-#
-#     if not auth_data:
-#         raise HTTPException(status_code=404, detail="Користувача не знайдено")
-#
-#     # Перевіряємо хеш засобами Python
-#     if not check_password_hash(auth_data["password_hash"], user.password):
-#         raise HTTPException(status_code=401, detail="Неправильний пароль")
-#
-#     # Тільки після успішної перевірки кажемо C++ зробити користувача онлайн
-#     db_engine.set_user_online(auth_data["id"])
-#
-#     return {"message": "Вхід успішний", "role": auth_data["role"]}
-#
-#
+    db_user.is_online = True
+    await db.commit()
+    return {"message": "Logged in successfully", "role": db_user.role}
+
+@router.post("/register_user", status_code=status.HTTP_201_CREATED)
+async def register_user(user: UserRegistration, db: AsyncSession = Depends(get_db)):
+    user_id = uuid.uuid4()
+    hashed_password = generate_password_hash(user.password, method='pbkdf2:sha256')
+    user_db = await create_user(
+        db=db,
+        user_id=user_id,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        email=user.email,
+        password=hashed_password,
+        phone=user.phone,
+    )
+    return {"message": "Create user in successfully", "user_data": user_db}
+
 # @router.post("/register_user", status_code=status.HTTP_201_CREATED)
 # def register_user(user: UserRegistrationRequest):
 #
