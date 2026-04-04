@@ -1,5 +1,5 @@
 #pragma once
-#include "Algoritm_Path.hpp" 
+#include "Algorithm_Path.hpp"
 #include "sqlite3.h"
 #include <shared_mutex>
 #include <unordered_map>
