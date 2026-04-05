@@ -8,7 +8,7 @@ from api.routers import directors, dispatchers, drivers, warehouses, companies, 
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 app = FastAPI(title="Hackaton API", version="1.0")
 
