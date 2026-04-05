@@ -75,6 +75,7 @@ class ClientCreate(BaseModel):
     company_name: str
     contact_person: str
     phone: str
+    email: str | EmailStr
     billing_address: str
 
 # --- СХЕМИ ЗАМОВЛЕНЬ ---

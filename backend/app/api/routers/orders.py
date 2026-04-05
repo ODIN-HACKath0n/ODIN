@@ -51,19 +51,14 @@ async def create_order(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied. Only Manager can create new order."
         )
-    order_db = await create_order_in_db(db, current_user.company_id, u, order: OrderCreate)
-    if not manager_user:
+    order_db = await create_order_in_db(db, current_user.company_id, company_data.client.email, order=company_data)
+    if not order_db:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {company_data.manager_id} not found."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error while creating order."
         )
-
-    new_company = await create_company(db=db, company_data=company_data)
-
-    if not new_company:
-        raise HTTPException(status_code=400, detail="Failed to create company")
 
     return {
         "message": "Company created successfully",
-        "company_data": new_company
+        "order_data": order_db
     }

@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from database.schemas import OrderCreate, OrderStatus
 from database.models import Order
-from crud.clients import get_client_by_id
+from crud.clients import get_client_by_email, create_client_in_db
 
 
 async def get_order_by_id(
@@ -46,10 +46,12 @@ async def get_all_orders(
     result = await db.execute(stmt)
     return result.scalars().all()
 
-async def create_order_in_db(db: AsyncSession, company_id: uuid.UUID, client_id: uuid.UUID, order: OrderCreate):
-    client_db = await get_client_by_id(db, client_id=client_id ,company_id=company_id)
+async def create_order_in_db(db: AsyncSession, company_id: uuid.UUID, client_email: str, order: OrderCreate):
+    client_id = None
+    client_db = await get_client_by_email(db, client_email=client_email ,company_id=company_id)
     if not client_db:
         client_id = uuid.uuid4()
+        await create_client_in_db(db, company_id, OrderCreate.client)
     new_order = Order(
         order_id=uuid.uuid4(),
         company_id =company_id,
