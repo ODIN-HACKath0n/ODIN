@@ -9,13 +9,30 @@
 #include <string>
 #include <memory>
 
+// Define Warehouse ONCE at the top
+struct Warehouse {
+    int id;
+    double px;
+    double py;
+    std::unordered_map<std::string, int> inventory;
+};
+
+// Now RouteResult can safely use Warehouse
+struct RouteResult {
+    bool isFound;
+    std::shared_ptr<Warehouse> optimalWarehouse;
+    double totalDistance;
+    double straightDistance;
+};
+
 enum class Priority {
     NORMAL = 0,
     HIGH = 1,
     CRITICAL = 2
 };
 
-typedef struct {
+// Define Request ONCE
+struct Request {
     unsigned int id;
     int64_t timestamp;
     Priority priority;
@@ -27,14 +44,7 @@ typedef struct {
     int currentLoad;
     float itemWeight;
     int maxCapacity;
-} Request;
-
-typedef struct {
-    int id;
-    double px;
-    double py;
-    std::unordered_map<std::string, int> inventory;
-} Warehouse;
+};
 
 class GeoMath {
 public:
@@ -52,6 +62,7 @@ double getDeviationFactor(Priority p);
 
 class ResourceFinder {
 public:
-    // ОСЬ ТУТ НАША ФУНКЦІЯ З 2 АРГУМЕНТАМИ
-    static std::shared_ptr<Warehouse> findBestPath(const Request& req, const std::vector<std::shared_ptr<Warehouse>>& allWarehouses);
-};  
+    // Notice I changed the return type to RouteResult to match your Python_include.cpp
+    // and removed 'static' to match your def(py::init<>()) in python binding.
+    RouteResult findBestPath(const Request& req, const std::vector<std::shared_ptr<Warehouse>>& allWarehouses);
+};

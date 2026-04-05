@@ -1,13 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
-project(logistics_core)
+project(routing_engine)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 1. Вказуємо CMake, де шукати PostgreSQL
-set(PostgreSQL_ROOT "C:/Program Files/PostgreSQL/18")
-
-# 2. Завантажуємо pybind11
+# 1. Завантажуємо pybind11
 include(FetchContent)
 FetchContent_Declare(
     pybind11
@@ -16,21 +13,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
-# 3. Знаходимо залежності
+# 2. Знаходимо Python
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
-find_package(PostgreSQL REQUIRED)
 
-# 4. Створюємо модуль (додано sqlite3.c, тому find_package для SQLite не потрібен)
-pybind11_add_module(logistics_core
+# 3. Створюємо модуль (тільки ваші C++ файли з алгоритмами та обгорткою)
+pybind11_add_module(routing_engine
     src/Algorithm_Path.cpp
-    src/Storage_Manager.cpp
     src/Python_include.cpp
-    src/sqlite3.c
 )
 
-# 5. Підключаємо заголовки
-target_include_directories(logistics_core PRIVATE includes)
-target_include_directories(logistics_core PRIVATE ${PostgreSQL_INCLUDE_DIRS})
-
-# 6. Лінкуємо ТІЛЬКИ PostgreSQL
-target_link_libraries(logistics_core PRIVATE ${PostgreSQL_LIBRARIES})
+# 4. Вказуємо папку з заголовками (hpp)
+target_include_directories(routing_engine PRIVATE includes)
