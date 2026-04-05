@@ -1,0 +1,16 @@
+.app-container {
+    min-height: 100vh;
+
+    background-color: #f7faf9;
+    background-image: url('./assets/bg-mesh.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    position: relative;
+}
