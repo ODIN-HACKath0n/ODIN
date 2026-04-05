@@ -61,6 +61,42 @@ class LocationCoords(BaseModel):
     lat: float = Field(ge=-90.0, le=90.0)
     lon: float = Field(ge=-180.0, le=180.0)
 
+# --- СХЕМИ МЕНЕДЖЕРІВ ---
+
+class ManagerCreate(BaseModel):
+    """Схема для створення нового менеджера (директором)"""
+    first_name: str
+    last_name: str
+    email: EmailStr
+    password: str
+    phone: str
+
+class ManagerUpdate(BaseModel):
+    """Схема для оновлення даних менеджера (всі поля необов'язкові)"""
+    first_name: str | None = None
+    last_name: str | None = None
+    phone: str | None = None
+
+class ManagerResponse(BaseModel):
+    """Схема для повернення даних менеджера з БД"""
+    user_id: uuid.UUID
+    company_id: uuid.UUID | None = None
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone: str | None = None
+    role: Roles
+    is_online: bool | None = None
+
+    # Дозволяє Pydantic читати дані з об'єктів SQLAlchemy
+    model_config = ConfigDict(from_attributes=True)
+
+class ManagerDataResponse(BaseModel):
+    """Схема-обгортка для відповіді API (згідно з вашим стилем)"""
+    message: str
+    manager_data: ManagerResponse
+
+
 # --- СХЕМИ КЛІЄНТІВ ---
 class ClientCreate(BaseModel):
     company_id: uuid.UUID
