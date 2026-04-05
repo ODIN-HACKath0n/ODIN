@@ -1,5 +1,5 @@
 #include "headerAlgoritm.hpp"
-#include<algorithm>
+#include <algorithm>
 
 struct RequestCompare {
 	bool operator()(const Request& a1, const Request& a2) {
@@ -21,7 +21,7 @@ double GeoMath::calculateDistance(double ax1, double ay1, double bx1, double by1
 	double lon2 = by1 * PI / 180.0;
 	double dtLat = lat2 - lat1;
 	double dtLon = lon2 - lon1;
-	double a = pow(std::sin(dtLat / 2), 2) +(std::cos(lat1) * std::cos(lat2) * pow(std::sin(dtLon / 2), 2));
+	double a = pow(std::sin(dtLat / 2), 2) + (std::cos(lat1) * std::cos(lat2) * pow(std::sin(dtLon / 2), 2));
 	double c = 2 * std::atan2(std::sqrt(a), std::sqrt(1 - a));
 	return R * c;
 }
@@ -40,40 +40,56 @@ bool PriorityManager::hasRequests() {
 	return !globalQueue.empty();
 }
 
-std::shared_ptr<Warehouse> ResourceFinder::findBestPath(const Request& req,const std::vector<std::shared_ptr<Warehouse>>& allWarehouses){
-	std::shared_ptr<Warehouse> bestWarehouse = nullptr;
-	double straightPath = GeoMath::calculateDistance(req.px, req.py, req.targetPx, req.targetPy);
-	double cof = getDeviationFactor(req.priority);
-	double maxAllowPath = straightPath * cof;
-	double minTotalPath = 1e18;
-	int bestStock = 0;
-	for (auto& it : allWarehouses) {
-		auto found = it->inventory.find(req.itemNeeded);
-		bool hasItem = (found != it->inventory.end() && found->second > 0);
-		bool hasSpace = ((req.currentLoad + req.itemWeight) <= req.maxCapacity);
-		if (!hasItem || !hasSpace) continue;
-		double distToWh = GeoMath::calculateDistance(req.px, req.py, it->px, it->py);
-		double distFromWh = GeoMath::calculateDistance(it->px, it->py, req.targetPx, req.targetPy);
-		double totalDetour = distToWh + distFromWh;
-		if (totalDetour > maxAllowPath) continue;
-		bool betterPath = totalDetour < minTotalPath;
-		bool samePath = (totalDetour == minTotalPath);
-		bool betterStock = (found->second > bestStock);
-		if (betterPath || (samePath && betterStock)) {
-			minTotalPath = totalDetour;
-			bestStock = found->second;
-			bestWarehouse = it;
-		}
-	}
-	return bestWarehouse;
-}
-
 double getDeviationFactor(Priority p) {
 	if (p == Priority::CRITICAL) return 1.05;
 	if (p == Priority::HIGH)     return 1.15;
 	return 1.30;
 }
 
+RouteResult ResourceFinder::findBestPath(const Request& req, const std::vector<std::shared_ptr<Warehouse>>& allWarehouses) {
+	RouteResult result;
+	result.isFound = false;
+	result.optimalWarehouse = nullptr;
+
+	double straightPath = GeoMath::calculateDistance(req.px, req.py, req.targetPx, req.targetPy);
+	result.straightDistance = straightPath;
+
+	double cof = getDeviationFactor(req.priority);
+	double maxAllowPath = straightPath * cof;
+	double minTotalPath = 1e18;
+	int bestStock = 0;
+
+	for (auto& it : allWarehouses) {
+		auto found = it->inventory.find(req.itemNeeded);
+		bool hasItem = (found != it->inventory.end() && found->second > 0);
+		bool hasSpace = ((req.currentLoad + req.itemWeight) <= req.maxCapacity);
+
+		if (!hasItem || !hasSpace) continue;
+
+		double distToWh = GeoMath::calculateDistance(req.px, req.py, it->px, it->py);
+		double distFromWh = GeoMath::calculateDistance(it->px, it->py, req.targetPx, req.targetPy);
+		double totalDetour = distToWh + distFromWh;
+
+		if (totalDetour > maxAllowPath) continue;
+
+		bool betterPath = totalDetour < minTotalPath;
+		bool samePath = (totalDetour == minTotalPath);
+		bool betterStock = (found->second > bestStock);
+
+		if (betterPath || (samePath && betterStock)) {
+			minTotalPath = totalDetour;
+			bestStock = found->second;
+			result.optimalWarehouse = it;
+		}
+	}
+
+	if (result.optimalWarehouse != nullptr) {
+		result.isFound = true;
+		result.totalDistance = minTotalPath;
+	}
+
+	return result;
+}
+
 int main(void) {
 	return 0;
-}
