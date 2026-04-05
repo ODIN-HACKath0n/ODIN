@@ -1,0 +1,1256 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.page-wrapper {
+  min-height: 100vh;
+  padding: 40px 0;
+  background-color: #c6d6e6;
+  background-image: url("/bgr_light.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Montserrat", sans-serif;
+  position: relative;
+}
+
+.brand-logo {
+  position: absolute;
+  top: 18px;
+  left: 0px;
+  z-index: 10;
+}
+
+.brand-logo img {
+  width: 198px;
+  height: auto;
+}
+
+.top-controls {
+  position: absolute;
+  top: 31px;
+  right: 75px;
+  z-index: 10;
+  display: flex;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.49);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 10px 14px;
+  border-radius: 24px;
+  border: 1px solid rgba(11, 15, 26, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.control-pill {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 7px 3px;
+  height: 32px;
+  cursor: pointer;
+  gap: 10px;
+}
+
+.lang-switch {
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  gap: 7px;
+  padding: 0 10px;
+  line-height: 1;
+  justify-content: center;
+}
+
+.lang-switch .active {
+  color: #ffffff;
+  font-weight: 400;
+}
+
+.lang-switch .separator {
+  font-weight: 300;
+  opacity: 1;
+}
+
+.theme-switch {
+  gap: 6px;
+  padding: 4px 6px;
+  align-items: center;
+}
+
+.icon-wrapper {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+}
+
+
+.icon-wrapper svg {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.moon-icon {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.active-sun {
+  background: rgba(34, 197, 94, 0.8);
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+  color: #ffffff;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  width: 400px;
+  height: 500px;
+  padding: 45px 45px 16px 45px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-card h2 {
+  color: rgba(11, 15, 26, 0.75);
+  font-size: 24px;
+  margin-top: 0;
+  margin-bottom: 34px;
+  font-weight: 700;
+}
+
+.input-group {
+  width: 310px;
+  margin-bottom: 24px;
+  text-align: right;
+}
+
+input {
+  width: 310px;
+  height: 52px;
+  padding: 15px 20px;
+  box-sizing: border-box;
+  border: 1px solid rgba(68, 138, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(198, 214, 230, 0.26);
+  font-size: 16px;
+  font-weight: 700;
+  outline: none;
+  color: #4a5568;
+  font-family: "Montserrat", sans-serif;
+}
+
+input::placeholder {
+  color: #94a3b8;
+  opacity: 0.6;
+}
+
+.forgot-password {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  color: rgba(22, 63, 131, 0.81);
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.forgot-password:hover {
+  color: rgba(68, 138, 255, 0.8);
+  text-decoration: underline;
+}
+
+.login-btn {
+  width: 310px;
+  height: 56px;
+  background: rgba(34, 197, 94, 0.8);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-top: -10px;
+  color: #ffffff;
+  font-family: "Montserrat", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.5);
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(34, 197, 94, 1);
+  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.5);
+}
+
+.google-btn {
+  width: 310px;
+  height: 56px;
+  margin: 15px auto 0 auto;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(22, 63, 131, 0.91);
+  transition: all 0.3s ease;
+}
+
+.google-btn img {
+  width: 24px;
+  height: 24px;
+}
+
+.google-btn:hover {
+  background: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.signup-link {
+  margin-top: 17px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: rgba(22, 63, 131, 0.76);
+}
+
+.signup-link a {
+  color: #1ac35a;
+  font-weight: 300;
+  text-decoration: none;
+  margin-left: 3px;
+  transition: 0.3s;
+}
+
+.signup-link a:hover {
+  color: #16a34a;
+  text-decoration: underline;
+}
+
+.divider {
+  width: 356px;
+  height: 1px;
+  background: rgba(22, 63, 131, 0.19);
+  margin-top: 24px;
+  margin-bottom: 14px;
+}
+
+.secure-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  color: rgba(22, 63, 131, 0.64);
+}
+
+/* ============================================
+   ТЕМНА ТЕМА — додати в кінець App.css
+   ============================================ */
+
+.dark .page-wrapper {
+  background-color: #0B0F1A;
+  background-image: url("/bgr_dark.png");
+}
+
+.dark .top-controls {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .control-pill {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+.dark .lang-switch {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.dark .lang-switch .active {
+  color: #ffffff;
+}
+
+.dark .lang-switch .separator {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.active-moon {
+  background: rgba(11, 15, 26, 0.69);
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(35, 46, 62, 0.4);
+  color: #ffffff;
+}
+
+.dark .icon-wrapper svg {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dark .login-card {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.dark .login-card h2 {
+  color: #ffffff;
+}
+
+.dark input {
+  background: rgba(5, 8, 16, 0.4);
+  border: 1px solid #334155;
+  color: #94A3B8;
+}
+
+.dark input::placeholder {
+  color: rgba(148, 163, 184, 0.5);
+  opacity: 1;
+}
+
+.dark .forgot-password {
+  color: rgba(255, 255, 255, 0.81);
+}
+
+.dark .forgot-password:hover {
+  color: #ffffff;
+}
+
+.dark .google-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.dark .google-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.dark .signup-link {
+  color: #ffffff;
+}
+
+.dark .signup-link a {
+  color: #1AC35A;
+}
+
+.dark .signup-link a:hover {
+  color: #69ffa0;
+  text-decoration: underline;
+}
+
+.dark .divider {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.dark .secure-text {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.dark .secure-text path {
+  fill: rgba(255, 255, 255, 0.3);
+} 
+
+/*-----------------------------*/
+.register-card {
+  height: auto;
+  padding: 35px 45px 15px 45px;}
+
+.register-card .input-group {
+  margin-bottom: 12px;
+}
+
+.register-card .login-btn {
+  margin-top: 8px;
+}
+
+/*------------------------------*/
+
+.forgot-card {
+  height: auto;
+  padding: 40px 45px 30px 45px;
+  gap: 0;
+}
+
+.forgot-card h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.forgot-icon {
+  margin: 10px 0 16px 0;
+}
+
+.forgot-description {
+  font-family: "Montserrat", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(11, 15, 26, 0.88);
+  text-align: center;
+  margin-bottom: 20px;
+  line-height: 1;
+}
+
+.dark .forgot-description {
+  color: #ffffff;
+}
+
+.forgot-card .login-btn {
+  margin-top: -5px;
+}
+
+.login-btn:disabled {
+  background: rgba(34, 197, 94, 0.4);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.sent-message {
+  font-family: "Montserrat", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(11, 15, 26, 0.65);
+  text-align: center;
+  line-height: 1;
+  margin: 10px 0;
+}
+
+/*------------------------*/
+.home-wrapper {
+  background-image: url("/home_light.png");
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 80px;
+}
+
+.home-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  margin-top: 80px;
+  max-width: 100%;
+  text-align: center;
+}
+
+.home-title {
+  font-family: "Montserrat", sans-serif;
+  font-size: 50px;
+  font-weight: 800;
+  color: rgba(22, 63, 131, 0.64);
+  line-height: 1.1;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.home-title-accent {
+  color: rgba(34, 158, 79, 0.8);
+}
+
+.home-subtitle {
+  font-family: "Montserrat", sans-serif;
+  font-size: 25px;
+  font-weight: 400;
+  color: #163F83;
+  margin: 0;
+}
+
+.home-buttons {
+  display: flex;
+  gap: 200px;
+  margin-top: 80px;
+}
+
+.home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 220px;
+  height: 56px;
+  border-radius: 12px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+.home-btn-primary {
+  background: rgba(34, 197, 94, 0.85);
+  color: #ffffff;
+}
+
+.home-btn-primary:hover {
+  background: rgba(34, 197, 94, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.4);
+}
+
+.home-btn-secondary {
+  background: rgba(22, 63, 131, 0.64);
+  color: #ffffff;
+}
+
+.home-btn-secondary:hover {
+  background: rgba(22, 63, 131, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(22, 63, 131, 0.3);
+}
+
+/* Футер */
+.home-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 80px;
+  text-align: center;
+}
+
+.home-footer-line {
+  width: 100%;
+  height: 1px;
+  background: rgba(22, 63, 131, 0.15);
+  margin-bottom: 12px;
+}
+
+.home-footer p {
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+  color: rgba(22, 63, 131, 0.5);
+  margin: 0;
+}
+
+/* Темна тема */
+.dark .home-wrapper {
+  background-image: url("/home_dark.png");
+}
+
+.dark .home-title {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dark .home-subtitle {
+  color: rgba(100, 116, 139, 0.66);
+}
+
+.dark .home-title-accent {
+  color: #22C55E;
+}
+
+.dark .home-footer p {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.dark .home-footer-line {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   КАРКАС АДМІН-ПАНЕЛІ (ВІД КОЛЕГИ)
+   ============================================ */
+
+   /* ============================================
+   ПОВЕРТАЄМО СТИЛІ ДЛЯ ТАБЛИЦІ
+   ============================================ */
+
+/* Відсуваємо меню від логотипа */
+.sidebar {
+    padding-top: 140px !important; 
+}
+
+/* Вирівнюємо заголовок і кнопку "Додати компанію" по краях */
+.admin-content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+/* Робимо кнопку акуратною */
+.admin-add-btn {
+    width: auto !important;
+    height: 48px !important;
+    margin-top: 0 !important;
+    padding: 0 24px;
+    font-size: 14px !important;
+    display: flex;
+    gap: 8px;
+}
+
+/* Фон та скляний ефект для всієї таблиці */
+.admin-table-wrap {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(22, 63, 131, 0.05);
+}
+
+.dark-theme .admin-table-wrap {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* МАГІЯ ТАБЛИЦІ: розбиваємо на 6 колонок */
+.admin-table-head, .admin-table-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2.5fr 1fr 1fr 1fr;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Шапка таблиці */
+.admin-table-head {
+    padding: 0 15px 15px 15px;
+    border-bottom: 1px solid rgba(22, 63, 131, 0.1);
+    margin-bottom: 15px;
+}
+
+.admin-table-head__cell {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+/* Окремий рядок компанії */
+.admin-table-row {
+    padding: 15px;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    transition: transform 0.2s;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.dark-theme .admin-table-row {
+    background: rgba(255, 255, 255, 0.05);
+    color: #f8fafc;
+}
+
+.admin-table-row:hover {
+    transform: translateY(-2px);
+}
+
+/* Кольори статусів */
+.admin-table-row__status--active { color: #16a34a; font-weight: 600; }
+.admin-table-row__status--blocked { color: #dc2626; font-weight: 600; }
+
+/* Кнопка "Увійти" в кінці рядка */
+.admin-enter-btn {
+    background: transparent;
+    border: 1px solid rgba(22, 63, 131, 0.2);
+    color: #163F83;
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.admin-enter-btn:hover {
+    background: rgba(22, 63, 131, 0.05);
+}
+
+.dark-theme .admin-enter-btn {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+:root {
+    --bg-main: #E2E8F0;
+    --bg-sidebar: #CBD5E1;
+    --text-primary: #1E293B;
+    --text-secondary: #64748B;
+    --accent-green: #22C55E;
+    --pill-bg: #94A3B8;
+    --pill-text: #FFFFFF;
+    --border-color: #94A3B8;
+}
+
+/* Підв'язуємо до твого контексту темної теми */
+.dark-theme {
+    --bg-main: #0B0E14;
+    --bg-sidebar: #1E232F;
+    --text-primary: #FFFFFF;
+    --text-secondary: #9CA3AF;
+    --accent-green: #22C55E;
+    --pill-bg: #374151;
+    --pill-text: #FFFFFF;
+    --border-color: #4B5563;
+}
+
+/* Замість body робимо обгортку спеціально для адмінки */
+.admin-global-layout {
+    font-family: 'Montserrat', sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Сайдбар */
+.sidebar {
+    width: 260px;
+    background-color: var(--bg-sidebar);
+    display: flex;
+    flex-direction: column;
+    padding: 30px 20px;
+    transition: background-color 0.3s ease;
+}
+
+.brand-logo { margin-bottom: 50px; }
+.brand-logo img { max-width: 150px; }
+
+.nav-menu { flex: 1; display: flex; flex-direction: column; gap: 5px;}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    text-align: left;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    color: var(--accent-green);
+}
+
+.nav-item.active {
+    font-weight: 700;
+}
+
+/* Головний контент */
+.main-content {
+    flex: 1;
+    padding: 40px 60px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Щоб таблиця могла скролитися */
+}
+
+/* Шапка */
+.top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 60px;
+}
+
+.top-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Панель керування мовою/темою в шапці (його версія) */
+.top-controls {
+    display: flex;
+    gap: 15px;
+}
+
+/* Центруємо колонки: 2 (ID), 4 (Співробітники), 5 (Статус) */
+.admin-table-head__cell:nth-child(2), .admin-table-row__id,
+.admin-table-head__cell:nth-child(4), .admin-table-row__emp,
+.admin-table-head__cell:nth-child(5), .admin-table-row__status {
+    text-align: center;
+}
+
+/* Центруємо колонку 6 (Дія - кнопка "Увійти") */
+.admin-table-head__cell:nth-child(6) {
+    text-align: center;
+}
+.admin-table-row__action {
+    display: flex;
+    justify-content: center;
+}
+
+/* Ідеальне вирівнювання плюсика і тексту в кнопці "Додати компанію" */
+.admin-add-btn {
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 700 !important; /* Робимо шрифт трохи жирнішим для краси */
+    text-transform: uppercase;
+}
+
+.admin-global-layout .top-controls {
+    background: rgba(241, 245, 249, 0.8); /* Світло-сірий фон, як на макеті */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
+
+/* Внутрішні "пігулки" */
+.admin-global-layout .control-pill {
+    background: rgba(255, 255, 255, 0.9); /* Майже повністю білі */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+}
+
+/* --- Кольори для тексту мови --- */
+.admin-global-layout .lang-switch {
+    color: rgba(148, 163, 184, 0.6); /* Світло-сірий неактивний текст */
+}
+
+.admin-global-layout .lang-switch .active {
+    color: #202327; /* На макеті активний текст виглядає білим */
+    text-shadow: 0px 0px 1px rgba(0,0,0,0.1); /* Трохи тіні, щоб біле читалось на білому */
+}
+
+.admin-global-layout .lang-switch .separator {
+    color: rgba(148, 163, 184, 0.3);
+}
+
+/* --- Кольори для іконок теми --- */
+.admin-global-layout .icon-wrapper svg {
+    color: rgba(148, 163, 184, 0.6); /* Неактивний місяць (світло-сірий) */
+}
+
+.admin-global-layout .active-sun {
+    background: #4ade80; /* Яскраво-зелений, як на скріншоті */
+    box-shadow: 0 2px 10px rgba(74, 222, 128, 0.3); /* Легка зелена тінь */
+}
+
+.admin-global-layout .active-sun svg {
+    color: #ffffff; /* Біле сонечко */
+}
+
+.dark-theme .top-controls {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .control-pill {
+    background: rgba(15, 23, 42, 0.8);
+}
+
+.dark-theme .lang-switch {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.dark-theme .lang-switch .active {
+    color: #ffffff;
+}
+
+.dark-theme .icon-wrapper svg {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.dark-theme .active-moon {
+    background: #4ade80; /* Активний зелений для місяця в темній темі */
+    box-shadow: 0 2px 10px rgba(74, 222, 128, 0.2);
+}
+
+.dark-theme .active-moon svg {
+    color: #ffffff;
+}
+
+/* ============================================
+   МОДАЛЬНЕ ВІКНО (РЕЄСТРАЦІЯ КОМПАНІЇ)
+   ============================================ */
+
+/* Розмитий фон на весь екран */
+.admin-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(226, 232, 240, 0.3); /* Напівпрозорий світлий фон */
+    backdrop-filter: blur(8px); /* Ефект сильного розмиття */
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.dark-theme .admin-modal-overlay {
+    background: rgba(11, 14, 20, 0.5); /* Темніший фон для темної теми */
+}
+
+/* Сама біла картка */
+.admin-modal-card {
+    background: #ffffff;
+    width: 440px;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.dark-theme .admin-modal-card {
+    background: #1E232F;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+.admin-modal__title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.admin-modal__form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.admin-modal__input {
+    width: 100%;
+    height: 48px;
+    background: #F8FAFC; /* Світло-сірий фон інпуту */
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 0 20px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1E293B;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.admin-modal__input::placeholder {
+    color: #94A3B8;
+    font-weight: 500;
+}
+
+.admin-modal__input:focus {
+    border-color: #22C55E;
+    background: #ffffff;
+}
+
+.dark-theme .admin-modal__input {
+    background: rgba(15, 23, 42, 0.5);
+    border-color: #374151;
+    color: #ffffff;
+}
+
+/* Дрібний текст під полем "Домен" */
+.admin-modal__hint {
+    font-size: 10px;
+    color: #94A3B8;
+    margin-top: -6px;
+    padding-left: 10px;
+    line-height: 1.2;
+}
+
+/* Кнопка створення */
+.admin-modal__save {
+    width: 100% !important; /* Розтягуємо на всю ширину картки */
+    height: 52px !important;
+    margin-top: 0 !important;
+    border-radius: 12px;
+    font-size: 15px !important;
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3) !important;
+}
+
+/* Підвал модалки з замочком */
+.admin-modal__footer {
+    width: 100%;
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.admin-modal__divider {
+    width: 100%;
+    height: 1px;
+    background: #E2E8F0;
+}
+
+.dark-theme .admin-modal__divider {
+    background: #374151;
+}
+
+.admin-modal__secure {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #94A3B8;
+    font-weight: 500;
+}
+
+/* ============================================
+   ГЛОБАЛЬНА СТАТИСТИКА
+   ============================================ */
+
+.stats-container {
+    margin-top: 10px;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.stats-section {
+    margin-bottom: 40px;
+}
+
+.stats-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 40px;
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.stats-labels span { flex: 1; text-align: center; }
+
+/* Велика плашка з цифрами */
+.stats-pill {
+    display: flex;
+    justify-content: space-between;
+    background-color: var(--pill-bg);
+    color: var(--pill-text);
+    padding: 24px 40px;
+    border-radius: 50px;
+    font-size: 28px;
+    font-weight: 700;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.stats-pill span { flex: 1; text-align: center; }
+
+/* Секція графіків */
+.charts-section {
+    display: flex;
+    gap: 40px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    padding: 40px;
+    border-radius: 20px;
+    border: 1px solid rgba(22, 63, 131, 0.05);
+}
+
+.dark-theme .charts-section {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chart-block { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+}
+
+.chart-title {
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+
+.divider-vertical {
+    width: 1px;
+    background-color: var(--border-color);
+    opacity: 0.3;
+}
+
+.chart-area.placeholder {
+    height: 250px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 16px;
+    border: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme .chart-area.placeholder { 
+    background: rgba(0, 0, 0, 0.2); 
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Фейковий графік (кругова діаграма CSS) */
+.fake-pie {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    /* 80% зелене (активні), 20% червоне (заблоковані) */
+    background: conic-gradient(#4ade80 0% 85%, #f87171 85% 100%);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Нова стилізація статистики за макетом */
+.stats-main-pills {
+    display: flex;
+    justify-content: space-between;
+    background: rgba(148, 163, 184, 0.5); /* Темніша плашка з макета */
+    padding: 20px 40px;
+    border-radius: 40px;
+    margin-bottom: 50px;
+}
+
+.stat-pill-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.stats-charts-grid {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+}
+
+.chart-card {
+    flex: 1;
+    padding: 20px;
+}
+
+.chart-card-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--accent-green);
+    margin-bottom: 40px;
+}
+
+.stats-divider {
+    width: 2px;
+    background: rgba(255, 255, 255, 0.3);
+    margin: 0 40px;
+}
+
+/* Фейковий лінійний графік як на макеті */
+.fake-line-graph {
+    width: 100%;
+    height: 250px;
+    border-left: 3px solid rgba(22, 63, 131, 0.5);
+    border-bottom: 3px solid rgba(22, 63, 131, 0.5);
+    position: relative;
+    background: linear-gradient(to top right, transparent 45%, var(--accent-green) 50%, transparent 55%); /* Імітація кривої */
+}
+
+/* Фейковий круговий графік з підписами */
+.pie-chart-container {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+.main-pie-chart {
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    background: conic-gradient(
+        #cbd5e1 0% 60%, 
+        #94a3b8 60% 85%, 
+        #4ade80 85% 100%
+    );
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.pie-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.pie-label-item {
+    position: relative;
+}
+
+.pie-label-item::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 50%;
+    width: 20px;
+    height: 1px;
+    background: currentColor;
+}
