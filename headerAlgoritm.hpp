@@ -30,6 +30,13 @@ struct Request {
 	int maxCapacity;
 };
 
+struct RouteResult {
+	bool isFound;
+	std::shared_ptr<Warehouse> optimalWarehouse;
+	double totalDistance;
+	double straightDistance;
+};
+
 struct Warehouse {
 	int id;
 	double px;
@@ -51,10 +58,7 @@ public:
 
 class ResourceFinder {
 public:
-	static std::shared_ptr<Warehouse> findBestPath(
-		const Request& req,
-		const std::vector<std::shared_ptr<Warehouse>>& allWarehouses
-	);
+	RouteResult findBestPath(const Request& req, const std::vector<std::shared_ptr<Warehouse>>& allWarehouses);
 };
 
 double getDeviationFactor(Priority p);
