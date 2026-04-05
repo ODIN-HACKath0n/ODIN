@@ -1,3 +1,9 @@
+.venv
+.env
+.idea/
+backend/cpp_engine/build
+/backend/app/offline_data.db
+backend/scripts
 build/
 .vscode/
 *.exe
