@@ -3,7 +3,10 @@ from sqlalchemy import Column, String, Text, Boolean, Integer, Numeric, ForeignK
 from sqlalchemy.dialects.postgresql import UUID, JSONB, DATE, CITEXT
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
+from sqlalchemy import Enum as SQLEnum
 from geoalchemy2 import Geography
+
+from database.schemas import Roles, Status, PaymentStatus, OrderStatus
 
 # Базовий клас, від якого "наслідуються" всі наші таблиці
 Base = declarative_base()
@@ -32,12 +35,12 @@ class Company(Base):
 
     company_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     company_name = Column(Text, nullable=False)
+    manager_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"))
+    corporation_email = Column(Text)
+    domain = Column(CITEXT)
     registration_number = Column(String(50))
     address = Column(Text)
     bank_details = Column(String(50))
-    corporation_email = Column(Text)
-    domain = Column(CITEXT)
-    manager_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"))
 
     users = relationship(
         "User",
@@ -77,7 +80,7 @@ class Order(Base):
     company_id = Column(UUID(as_uuid=True), ForeignKey("companies.company_id"))
     client_id = Column(UUID(as_uuid=True), ForeignKey("clients.client_id"))
     priority = Column(String(20))
-    status = Column(String(50))
+    status = Column(SQLEnum(OrderStatus, native_enum=False, length=50), default=OrderStatus.CONFIRMED)
     cargo_description = Column(Text)
     weight = Column(Numeric(10,2))
     volume = Column(Numeric(10,2))
@@ -102,7 +105,7 @@ class Payment(Base):
 
     payment_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     order_id = Column(UUID(as_uuid=True), ForeignKey("orders.order_id"))
-    status = Column(String(50))
+    status = Column(SQLEnum(PaymentStatus, native_enum=False, length=50), default=PaymentStatus.PENDING)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     payment_method = Column(String(50))
     amount = Column(Numeric(10,2))
@@ -120,7 +123,7 @@ class Shipment(Base):
     driver_id = Column(UUID(as_uuid=True), ForeignKey("drivers.user_id"))
     dispatcher_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"))
     quantity = Column(Numeric(10,2))
-    status = Column(String(50))
+    status = Column(SQLEnum(Status, native_enum=False, length=50), default=Status.IDLE)
     departure_date = Column(DateTime(timezone=True), server_default=func.now())
     arrival_date = Column(DateTime(timezone=True), server_default=func.now())
     waybill_number = Column(String(100))
@@ -163,7 +166,7 @@ class Transport(Base):
     fuel_consumption_rate = Column(Numeric(5,2))
     next_maintenance_date = Column(DATE)
     current_position = Column(Geography(geometry_type='POINT', srid=4326))
-    status = Column(String(50), default="Free")
+    status = Column(SQLEnum(Status, native_enum=False, length=50), default=Status.FREE)
 
 # ==========================================
 # Таблиця: Користувачі
@@ -180,7 +183,7 @@ class User(Base):
     email = Column(Text, unique=True, nullable=False, index=True)
     password = Column(Text, nullable=False)
     phone = Column(String(20))
-    role = Column(String(50))
+    role = Column(SQLEnum(Roles, native_enum=False, length=50), default=Roles.NONE)
     is_online = Column(Boolean, default=False)
 
     company = relationship(

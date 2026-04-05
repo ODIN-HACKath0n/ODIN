@@ -16,8 +16,8 @@ async def get_driver_by_id(db: AsyncSession, driver_id: uuid.UUID) -> Driver:
     result = await db.execute(stmt)
     return result.scalars().first()
 
-
 async def get_all_drivers(db: AsyncSession, company_id: uuid.UUID , skip: int = 0, limit: int = 100) -> Sequence[Driver]:
+
     """Повертає список водіїв з пагінацією (Аналог: SELECT * FROM drivers LIMIT 100 OFFSET 0)"""
     stmt = (
         select(Driver)

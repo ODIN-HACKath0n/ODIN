@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from decimal import Decimal
@@ -19,6 +19,77 @@ class Status(enum.Enum):
     BUSY = "BUSY"
     IN_TRANSIT = "IN_TRANSIT"
     IS_UNLOADED = "IS_UNLOADED"
+    FREE = "FREE"
+
+class OrderStatus(enum.Enum):
+    DRAFT = "DRAFT"  # Чернетка (клієнт заповнює дані)
+    PENDING = "PENDING"  # Очікує підтвердження менеджером або оплати
+    CONFIRMED = "CONFIRMED"  # Підтверджено (готове до пошуку машини)
+
+    # --- Етап підбору виконавця ---
+    SEARCHING = "SEARCHING"  # Пошук перевізника/водія
+    ASSIGNED = "ASSIGNED"  # Водія та транспорт призначено
+
+    # --- Етап виконання (Логістика) ---
+    ON_WAY_TO_PICKUP = "ON_WAY_TO_PICKUP"  # Водій їде на точку завантаження
+    PICKING_UP = "PICKING_UP"  # Процес завантаження вантажу
+    IN_TRANSIT = "IN_TRANSIT"  # Вантаж у дорозі (найдовший етап)
+    ARRIVED_AT_DELIVERY = "ARRIVED_AT_DELIVERY"  # Прибув на точку розвантаження
+    UNLOADING = "UNLOADING"  # Процес вивантаження
+
+    # --- Фінальні етапи ---
+    DELIVERED = "DELIVERED"  # Вантаж доставлено (але документи ще не підписані)
+    COMPLETED = "COMPLETED"  # Завершено (вантаж доставлено, документи в порядку, оплата отримана)
+
+    # --- Проблемні етапи ---
+    CANCELED = "CANCELED"  # Скасовано (клієнтом або логістом)
+    RETURNED = "RETURNED"  # Повернення (якщо отримувач не прийняв вантаж)
+    ON_HOLD = "ON_HOLD"  # Призупинено (наприклад, через проблеми на митниці чи ДТП)
+
+
+class PaymentStatus(enum.Enum):
+    PENDING = "PENDING"       # Очікує оплати (замовлення створено, рахунок виставлено)
+    PROCESSING = "PROCESSING" # В обробці (користувач перейшов на сторінку банку або транзакція перевіряється)
+    COMPLETED = "COMPLETED"   # Успішно (гроші успішно списані/надійшли)
+    FAILED = "FAILED"         # Помилка (відхилено банком, недостатньо коштів, ліміт)
+    CANCELED = "CANCELED"     # Скасовано (клієнт передумав і закрив сторінку оплати, або менеджер скасував)
+    REFUNDED = "REFUNDED"     # Повернено (гроші були повернуті клієнту після успішної оплати)
+
+
+class LocationCoords(BaseModel):
+    """Схема для зручної передачі координат з фронтенду (Широта, Довгота)"""
+    lat: float = Field(ge=-90.0, le=90.0)
+    lon: float = Field(ge=-180.0, le=180.0)
+
+# --- СХЕМИ КЛІЄНТІВ ---
+class BaseClient(BaseModel):
+    client_id: uuid.UUID
+    company_id: uuid.UUID
+    company_name: str
+    contact_person: str
+    phone: str
+    billing_address: str
+
+class ClientCreate(BaseModel):
+    company_id: uuid.UUID
+    company_name: str
+    contact_person: str
+    phone: str
+    billing_address: str
+
+# --- СХЕМИ ЗАМОВЛЕНЬ ---
+class OrderCreate(BaseModel):
+    pickup_address: LocationCoords
+    delivery_address: LocationCoords
+    weight: Decimal
+    volume: Decimal
+    cargo_description: str
+    quantity: int
+    price: Decimal
+    created_at: datetime
+    deadline: datetime
+    client: ClientCreate
+
 
 # --- СХЕМИ ВОДІЇВ ---
 class DriverCreate(BaseModel):
