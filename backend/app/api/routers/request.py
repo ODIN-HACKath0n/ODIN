@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 import routing_engine # Ваш скомпільований C++ модуль!
 
-router = APIRouter(prefix="/routing", tags=["Routing"])
+router = APIRouter(prefix="/api/v1/routing", tags=["Routing"])
 
 @router.post("/recalculate")
 async def recalculate_route():
