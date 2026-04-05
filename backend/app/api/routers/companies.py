@@ -22,7 +22,7 @@ async def register_company(
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
-    if current_user.role != Roles.TECH_ADMIN.value:  # або Roles.TECH_ADMIN.value, залежно від того, як ви зберігаєте в БД
+    if current_user.role != Roles.TECH_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied. Only Tech Admin can create new companies."

@@ -2,7 +2,6 @@ import uuid
 from fastapi import APIRouter, status, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Ваші імпорти (шляхи можуть трохи відрізнятися залежно від папок)
 from database.session import get_db
 from database.models import User
 from core.dependencies import get_current_user
@@ -42,7 +41,7 @@ async def add_driver(
 ):
     """Створити нового водія"""
     # Перевірка прав доступу: чи має право ця людина наймати водіїв?
-    if current_user.role not in [Roles.MANAGER.value, Roles.DIRECTOR.value]:
+    if current_user.role not in [Roles.MANAGER, Roles.DIRECTOR]:
         raise HTTPException(status_code=403, detail="Not enough privileges to add a driver")
 
     # Створюємо водія через CRUD
@@ -62,7 +61,7 @@ async def update_driver_transport(
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
-    if current_user.role not in [Roles.MANAGER.value, Roles.MANAGER.value]:
+    if current_user.role not in [Roles.MANAGER, Roles.MANAGER]:
         raise HTTPException(status_code=403, detail="Not enough privileges to change a driver transport")
 
     driver = await get_driver_by_id(db, driver_id)

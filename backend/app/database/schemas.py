@@ -90,6 +90,23 @@ class OrderCreate(BaseModel):
     deadline: datetime
     client: ClientCreate
 
+class OrderResponse(BaseModel):
+    pickup_address: LocationCoords
+    delivery_address: LocationCoords
+    weight: Decimal
+    volume: Decimal
+    cargo_description: str
+    quantity: int
+    price: Decimal
+    created_at: datetime
+    deadline: datetime
+    client: ClientCreate
+
+    model_config = ConfigDict(from_attributes=True)
+
+class OrderDataResponse(BaseModel):
+    message: str
+    order_data: OrderResponse # Вкладаємо схему в схему!
 
 # --- СХЕМИ ВОДІЇВ ---
 class DriverCreate(BaseModel):

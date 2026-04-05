@@ -41,7 +41,7 @@ async def promote_to_director(
         current_user: User = Depends(get_current_user)
 ):
     """Призначити користувача директором (тільки для діючих директорів)"""
-    if current_user.role != Roles.DIRECTOR.value:
+    if current_user.role != Roles.DIRECTOR:
         raise HTTPException(status_code=403, detail="Only directors can promote others to directors")
 
     updated_user = await set_director_role(db, user_id=user_id, company_id=current_user.company_id)
@@ -71,7 +71,7 @@ async def fire_director(
         current_user: User = Depends(get_current_user)
 ):
     """Зняти роль директора"""
-    if current_user.role != Roles.DIRECTOR.value:
+    if current_user.role != Roles.DIRECTOR:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
     # Не даємо директору звільнити самого себе через цей роутер (опціонально)
