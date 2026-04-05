@@ -9,7 +9,7 @@ async def get_director_by_id(db: AsyncSession, director_id: uuid.UUID, company_i
     """Шукає директора конкретної компанії"""
     stmt = select(User).where(
         User.user_id == director_id,
-        User.role == Roles.DIRECTOR,
+        User.role == Roles.DIRECTOR.value,
         User.company_id == company_id
     )
     result = await db.execute(stmt)
@@ -19,7 +19,7 @@ async def get_director_by_id(db: AsyncSession, director_id: uuid.UUID, company_i
 async def get_all_directors(db: AsyncSession, company_id: uuid.UUID, skip: int = 0, limit: int = 100) -> Sequence[User]:
     """Повертає список всіх директорів вашої компанії"""
     stmt = select(User).where(
-        User.role == Roles.DIRECTOR,
+        User.role == Roles.DIRECTOR.value,
         User.company_id == company_id
     ).offset(skip).limit(limit)
 
@@ -37,7 +37,7 @@ async def set_director_role(db: AsyncSession, user_id: uuid.UUID, company_id: uu
     if not user_db:
         return None
 
-    user_db.role = Roles.DIRECTOR
+    user_db.role = Roles.DIRECTOR.value
     await db.commit()
     await db.refresh(user_db)
     return user_db
@@ -49,7 +49,7 @@ async def remove_director_role(db: AsyncSession, director_id: uuid.UUID, company
     if not user_db:
         return None
 
-    user_db.role = Roles.NONE  # або інша роль за замовчуванням
+    user_db.role = Roles.NONE.value  # або інша роль за замовчуванням
     await db.commit()
     await db.refresh(user_db)
     return user_db

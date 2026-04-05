@@ -37,9 +37,17 @@ class Company(Base):
     bank_details = Column(String(50))
     corporation_email = Column(Text)
     domain = Column(CITEXT)
+    manager_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"))
 
-    # МАГІЯ PYTHON: Зв'язок (дозволяє витягнути всіх юзерів компанії кодом: my_company.users)
-    users = relationship("User", back_populates="company")
+    users = relationship(
+        "User",
+        back_populates="company",
+        foreign_keys="[User.company_id]"
+    )
+    manager = relationship(
+        "User",
+        foreign_keys=[manager_id]
+    )
 
 # ==========================================
 # Таблиця: Водії
@@ -175,8 +183,11 @@ class User(Base):
     role = Column(String(50))
     is_online = Column(Boolean, default=False)
 
-    # Зв'язки
-    company = relationship("Company", back_populates="users")
+    company = relationship(
+        "Company",
+        back_populates="users",
+        foreign_keys=[company_id]
+    )
     driver_profile = relationship(
         "Driver",
         back_populates="user",

@@ -1,8 +1,9 @@
 import uuid
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, Sequence
 from pydantic import EmailStr
+
 from database.models import User
 from database.schemas import UserRegistration
 
@@ -10,19 +11,19 @@ from database.schemas import UserRegistration
 # 1. READ (Читання записів)
 # ==========================================
 
-async def get_user_by_id(db: AsyncSession, user_id: uuid.UUID):
+async def get_user_by_id(db: AsyncSession, user_id: uuid.UUID) -> User:
     """Шукає одного користувача за його ID (Аналог: SELECT * FROM users WHERE user_id = ...)"""
     stmt = select(User).where(User.user_id == user_id)
     result = await db.execute(stmt)
     return result.scalars().first()
 
-async def get_user_by_email(db: AsyncSession, email: EmailStr):
+async def get_user_by_email(db: AsyncSession, email: str | EmailStr) -> User:
     stmt = select(User).where(User.email == email)
     result = await db.execute(stmt)
     return result.scalars().first()
 
 
-async def get_user_by_email_and_company(db: AsyncSession, email: str, company_id: uuid.UUID):
+async def get_user_by_email_and_company(db: AsyncSession, email: str, company_id: uuid.UUID) -> User:
     stmt = select(User).where(
         User.email == email,
         User.company_id == company_id
@@ -31,7 +32,7 @@ async def get_user_by_email_and_company(db: AsyncSession, email: str, company_id
     result = await db.execute(stmt)
     return result.scalars().first()
 
-async def get_all_users(db: AsyncSession, skip: int = 0, limit: int = 100):
+async def get_all_users(db: AsyncSession, skip: int = 0, limit: int = 100) -> Sequence[User]:
     """Повертає список користувачів з пагінацією (Аналог: SELECT * FROM users LIMIT 100 OFFSET 0)"""
     stmt = select(User).offset(skip).limit(limit)
     result = await db.execute(stmt)
@@ -42,7 +43,7 @@ async def get_all_users(db: AsyncSession, skip: int = 0, limit: int = 100):
 # 2. CREATE (Створення запису)
 # ==========================================
 
-async def create_user(db: AsyncSession, user_id: uuid.UUID, company_id: uuid.UUID | None, first_name: str, user_data: UserRegistration):
+async def create_user(db: AsyncSession, user_id: uuid.UUID, company_id: uuid.UUID | None, user_data: UserRegistration):
     """Створює нового користувача в БД (Аналог: INSERT INTO users ...)"""
 
     existing_user = await get_user_by_email(db, user_data.email)
@@ -52,7 +53,7 @@ async def create_user(db: AsyncSession, user_id: uuid.UUID, company_id: uuid.UUI
     new_user = User(
         user_id = user_id,
         company_id = company_id,
-        first_name = first_name,
+        first_name = user_data.first_name,
         last_name = user_data.last_name,
         email = user_data.email,
         password = user_data.password,
@@ -99,7 +100,7 @@ async def set_user_company(db: AsyncSession, company_id: uuid.UUID, user_db: Use
 # 4. DELETE (Видалення запису)
 # ==========================================
 
-async def delete_user(db: AsyncSession, user_id: uuid.UUID):
+async def delete_user(db: AsyncSession, user_id: uuid.UUID) -> bool:
     """Видаляє користувача (Аналог: DELETE FROM users WHERE user_id = ...)"""
     user = await get_user_by_id(db, user_id)
     if user:

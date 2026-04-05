@@ -30,7 +30,7 @@ async def get_drivers(
 ):
     """Отримати список всіх водіїв компанії"""
     # Викликаємо асинхронну CRUD функцію
-    drivers = await get_all_drivers(db, skip=skip, limit=limit)
+    drivers = await get_all_drivers(db, current_user.company_id ,skip=skip, limit=limit)
     return {"message": "Success", "drivers": drivers}
 
 
@@ -42,7 +42,7 @@ async def add_driver(
 ):
     """Створити нового водія"""
     # Перевірка прав доступу: чи має право ця людина наймати водіїв?
-    if current_user.role not in [Roles.MANAGER, Roles.DIRECTOR]:
+    if current_user.role not in [Roles.MANAGER.value, Roles.DIRECTOR.value]:
         raise HTTPException(status_code=403, detail="Not enough privileges to add a driver")
 
     # Створюємо водія через CRUD
@@ -62,7 +62,7 @@ async def update_driver_transport(
         db: AsyncSession = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
-    if current_user.role not in [Roles.MANAGER, Roles.MANAGER]:
+    if current_user.role not in [Roles.MANAGER.value, Roles.MANAGER.value]:
         raise HTTPException(status_code=403, detail="Not enough privileges to change a driver transport")
 
     driver = await get_driver_by_id(db, driver_id)
