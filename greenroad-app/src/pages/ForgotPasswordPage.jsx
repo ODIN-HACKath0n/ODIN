@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { useState } from "react";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 function MoonIcon() {
   return (
     <svg viewBox="0 0 24 24" width="16" height="16"
@@ -33,10 +35,7 @@ function SunIcon() {
 function ShieldIcon() {
   return (
     <svg width="14" height="16" viewBox="0 0 14 16" fill="none">
-      <path
-        d="M7 0L0 2.8V7.7C0 11.76 3.01 15.54 7 16C10.99 15.54 14 11.76 14 7.7V2.8L7 0ZM7 14.42C4.13 13.97 1.87 11.06 1.5 7.97V4L7 1.93L12.5 4V7.97C12.13 11.06 9.87 13.97 7 14.42ZM6.38 10.5L3.62 7.75L4.68 6.69L6.38 8.39L9.32 5.45L10.38 6.51L6.38 10.5Z"
-        fill="#94A3B8"
-      />
+      <path d="M7 0L0 2.8V7.7C0 11.76 3.01 15.54 7 16C10.99 15.54 14 11.76 14 7.7V2.8L7 0ZM7 14.42C4.13 13.97 1.87 11.06 1.5 7.97V4L7 1.93L12.5 4V7.97C12.13 11.06 9.87 13.97 7 14.42ZM6.38 10.5L3.62 7.75L4.68 6.69L6.38 8.39L9.32 5.45L10.38 6.51L6.38 10.5Z" fill="#94A3B8" />
     </svg>
   );
 }
@@ -47,44 +46,54 @@ function CloudKeyIcon() {
 
 export default function ForgotPasswordPage() {
   const { theme, toggleTheme, lang, toggleLang } = useApp();
-  const [sent, setSent] = useState(false); 
+  const [sent, setSent] = useState(false);
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSend = async () => {
+    if (!email.trim()) return;
+    try {
+      setError(null);
+      setLoading(true);
+      const res = await fetch(`${API_URL}/auth/forgot_password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      // We show success regardless of server response to avoid user enumeration
+      if (!res.ok && res.status !== 404) {
+        throw new Error("Server error");
+      }
+      setSent(true);
+    } catch (err) {
+      // Still show success to user (security: don't reveal if email exists)
+      setSent(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="page-wrapper">
-      {/* Логотип */}
       <div className="brand-logo">
         <Link to="/">
-          <img
-            src={theme === "light" ? "/logo.svg" : "/logo.2.svg"}
-            alt="GreenRoad Logo"
-          />
+          <img src={theme === "light" ? "/logo.svg" : "/logo.2.svg"} alt="GreenRoad Logo" />
         </Link>
       </div>
 
-      {/* Верхні контролі */}
       <div className="top-controls">
         <div className="control-pill lang-switch" onClick={toggleLang}>
           <span className={lang === "UA" ? "active" : ""}>UA</span>
           <span className="separator">|</span>
           <span className={lang === "EN" ? "active" : ""}>EN</span>
         </div>
-
         <div className="control-pill theme-switch" onClick={toggleTheme}>
-          <div
-            className={`icon-wrapper ${theme === "dark" ? "active-moon" : ""}`}
-          >
-            <MoonIcon />
-          </div>
-          <div
-            className={`icon-wrapper ${theme === "light" ? "active-sun" : ""}`}
-          >
-            <SunIcon />
-          </div>
+          <div className={`icon-wrapper ${theme === "dark" ? "active-moon" : ""}`}><MoonIcon /></div>
+          <div className={`icon-wrapper ${theme === "light" ? "active-sun" : ""}`}><SunIcon /></div>
         </div>
       </div>
 
-      {/* Картка */}
       <div className="login-card forgot-card">
         <h2>{lang === "UA" ? "Відновлення паролю" : "Password recovery"}</h2>
 
@@ -98,22 +107,28 @@ export default function ForgotPasswordPage() {
             : "Enter your Email and we will send you password reset instructions"}
         </p>
 
+        {error && <p className="form-error">{error}</p>}
+
         <div className="input-group">
           <input
-            type="text"
+            type="email"
             placeholder={lang === "UA" ? "Електронна пошта" : "Email"}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={sent || loading}
+            onKeyDown={(e) => e.key === "Enter" && !sent && handleSend()}
           />
         </div>
 
         {!sent ? (
           <button
             className="login-btn"
-            onClick={() => setSent(true)}
-            disabled={!email}
+            onClick={handleSend}
+            disabled={!email.trim() || loading}
           >
-            {lang === "UA" ? "НАДІСЛАТИ ПОСИЛАННЯ" : "SEND LINK"}
+            {loading
+              ? (lang === "UA" ? "НАДСИЛАННЯ..." : "SENDING...")
+              : (lang === "UA" ? "НАДІСЛАТИ ПОСИЛАННЯ" : "SEND LINK")}
           </button>
         ) : (
           <div className="sent-message">
@@ -127,7 +142,7 @@ export default function ForgotPasswordPage() {
 
         <div className="signup-link">
           {lang === "UA" ? "Згадали пароль?" : "Remember your password?"}{" "}
-          <Link to="/">
+          <Link to="/login">
             {lang === "UA" ? "Повернутися до входу" : "Back to Sign In"}
           </Link>
         </div>
