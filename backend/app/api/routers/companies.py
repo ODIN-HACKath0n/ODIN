@@ -12,7 +12,7 @@ from crud.user import get_user_by_email, get_user_by_email_and_company, set_user
 from core.dependencies import get_current_user
 
 router = APIRouter(
-    prefix="/companies",
+    prefix="/api/v1/companies",
     tags=["Companies"],
 )
 

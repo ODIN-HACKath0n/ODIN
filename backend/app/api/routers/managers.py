@@ -16,7 +16,7 @@ from crud.manager import (
 )
 
 router = APIRouter(
-    prefix="/managers",
+    prefix="/api/v1/managers",
     tags=["Managers"]
 )
 
