@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 
-// ── Icons ────────────────────────────────────────────────────────────────────
-
+// ── ІКОНКИ ────────────────────────────────────────────────────────────────────
 function MoonIcon() {
   return (
     <svg
@@ -13,14 +12,11 @@ function MoonIcon() {
       stroke="currentColor"
       strokeWidth="2"
       fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
     >
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
   );
 }
-
 function SunIcon() {
   return (
     <svg
@@ -30,22 +26,12 @@ function SunIcon() {
       stroke="currentColor"
       strokeWidth="2"
       fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
     >
       <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1" x2="12" y2="3" />
-      <line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1" y1="12" x2="3" y2="12" />
-      <line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+      <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
     </svg>
   );
 }
-
 function IconCompanies() {
   return (
     <svg
@@ -55,8 +41,6 @@ function IconCompanies() {
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
     >
       <rect x="3" y="3" width="7" height="7" rx="1" />
       <rect x="14" y="3" width="7" height="7" rx="1" />
@@ -65,7 +49,6 @@ function IconCompanies() {
     </svg>
   );
 }
-
 function IconStats() {
   return (
     <svg
@@ -75,15 +58,12 @@ function IconStats() {
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
     >
       <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
       <polyline points="16 7 22 7 22 13" />
     </svg>
   );
 }
-
 function IconSettings() {
   return (
     <svg
@@ -93,15 +73,12 @@ function IconSettings() {
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
     >
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   );
 }
-
 function IconLogout() {
   return (
     <svg
@@ -111,8 +88,6 @@ function IconLogout() {
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
     >
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <polyline points="16 17 21 12 16 7" />
@@ -120,7 +95,6 @@ function IconLogout() {
     </svg>
   );
 }
-
 function IconEnter() {
   return (
     <svg
@@ -130,8 +104,6 @@ function IconEnter() {
       fill="none"
       stroke="currentColor"
       strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
     >
       <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
       <polyline points="10 17 15 12 10 7" />
@@ -139,7 +111,6 @@ function IconEnter() {
     </svg>
   );
 }
-
 function IconPlus() {
   return (
     <svg
@@ -149,7 +120,6 @@ function IconPlus() {
       fill="none"
       stroke="currentColor"
       strokeWidth="2.5"
-      strokeLinecap="round"
     >
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
@@ -157,26 +127,174 @@ function IconPlus() {
   );
 }
 
-function IconClose() {
+// ── СТОРІНКА СТАТИСТИКИ ───────────────────────────────────────────────────────
+function StatisticsPage({ lang, companies }) {
+  const total = companies.length;
+  const active = companies.filter((c) => c.status === "active").length;
+  const employees = companies.reduce(
+    (sum, c) => sum + (Number(c.employees) || 0),
+    0,
+  );
+
   return (
-    <svg
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
+    <div className="stats-container">
+      <div className="stats-main-pills">
+        <div className="stat-pill-item">
+          <span className="stat-label">
+            {lang === "UA" ? "Всього компаній" : "Total companies"}
+          </span>
+          <span className="stat-value">{total}</span>
+        </div>
+        <div className="stat-pill-item">
+          <span className="stat-label">
+            {lang === "UA" ? "Активні замовлення" : "Active orders"}
+          </span>
+          <span className="stat-value">2.654</span>
+        </div>
+        <div className="stat-pill-item">
+          <span className="stat-label">
+            {lang === "UA" ? "Працівників онлайн" : "Employees online"}
+          </span>
+          <span className="stat-value">{employees}</span>
+        </div>
+        <div className="stat-pill-item">
+          <span className="stat-label">
+            {lang === "UA" ? "Ефективність системи" : "System efficiency"}
+          </span>
+          <span className="stat-value">98%</span>
+        </div>
+      </div>
+      <div className="stats-charts-grid">
+        <div className="chart-card">
+          <h3 className="chart-card-title">
+            {lang === "UA" ? "Динаміка замовлень" : "Order dynamics"}
+          </h3>
+          <div className="line-chart-placeholder">
+            <div className="fake-line-graph"></div>
+          </div>
+        </div>
+        <div className="stats-divider"></div>
+        <div className="chart-card">
+          <h3 className="chart-card-title">
+            {lang === "UA" ? "Розподіл ролей" : "Role distribution"}
+          </h3>
+          <div className="pie-chart-container">
+            <div
+              className="main-pie-chart"
+              style={{
+                background: `conic-gradient(#4ade80 0% ${(active / total) * 100}%, #f87171 ${(active / total) * 100}% 100%)`,
+              }}
+            ></div>
+            <div className="pie-labels">
+              <div className="pie-label-item">Активні ({active})</div>
+              <div className="pie-label-item">
+                Заблоковані ({total - active})
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-// ── Data ─────────────────────────────────────────────────────────────────────
+// ── МОДАЛКА ───────────────────────────────────────────────────────────────────
+function AddModal({ lang, onClose, onAdd }) {
+  const [form, setForm] = useState({
+    name: "",
+    managerId: "",
+    email: "",
+    domain: "",
+  });
+  const set = (e) =>
+    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const submit = () => {
+    if (!form.name.trim() || !form.managerId.trim() || !form.email.trim())
+      return;
+    onAdd({
+      id: form.managerId,
+      name: form.name,
+      email: form.email,
+      employees: 0,
+      status: "active",
+    });
+    onClose();
+  };
+  return (
+    <div className="admin-modal-overlay" onClick={onClose}>
+      <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
+        <h3 className="admin-modal__title">
+          {lang === "UA" ? "Реєстрація нової компанії" : "Register company"}
+        </h3>
+        <div className="admin-modal__form">
+          <input
+            name="name"
+            placeholder="Назва"
+            onChange={set}
+            className="admin-modal__input"
+          />
+          <input
+            name="managerId"
+            placeholder="ID Менеджера"
+            onChange={set}
+            className="admin-modal__input"
+          />
+          <input
+            name="email"
+            placeholder="Email"
+            onChange={set}
+            className="admin-modal__input"
+          />
+          <input
+            name="domain"
+            placeholder="Домен"
+            onChange={set}
+            className="admin-modal__input"
+          />
+        </div>
+        <button className="login-btn admin-modal__save" onClick={submit}>
+          {lang === "UA" ? "СТВОРИТИ" : "CREATE"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
-const INITIAL_COMPANIES = [
+// ── РЯДОК ТАБЛИЦІ ─────────────────────────────────────────────────────────────
+function CompanyRow({ company, lang, onToggle }) {
+  const navigate = useNavigate();
+  const isActive = company.status === "active";
+  return (
+    <div className="admin-table-row">
+      <span className="admin-table-row__name">{company.name}</span>
+      <span className="admin-table-row__id">{company.id}</span>
+      <span className="admin-table-row__email">{company.email}</span>
+      <span className="admin-table-row__emp">{company.employees}</span>
+      <span
+        className={`admin-table-row__status ${isActive ? "admin-table-row__status--active" : "admin-table-row__status--blocked"}`}
+      >
+        {isActive
+          ? lang === "UA"
+            ? "Активна"
+            : "Active"
+          : lang === "UA"
+            ? "Заблокована"
+            : "Blocked"}
+      </span>
+      <div className="admin-table-row__action">
+        <button
+          className="admin-enter-btn"
+          onClick={() => navigate("/manager")}
+        >
+          <IconEnter /> {lang === "UA" ? "Увійти" : "Enter"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── ГОЛОВНА СТОРІНКА ──────────────────────────────────────────────────────────
+const INITIAL = [
   {
     id: "NT-001",
     name: "Nova Trans",
@@ -208,246 +326,32 @@ const NAV = [
   },
   {
     key: "settings",
-    labelUA: "Налаштування системи",
-    labelEN: "System Settings",
+    labelUA: "Налаштування",
+    labelEN: "Settings",
     Icon: IconSettings,
   },
   { key: "logout", labelUA: "Вихід", labelEN: "Logout", Icon: IconLogout },
 ];
 
-// ── Add-company modal (ОНОВЛЕНА ВЕРСІЯ) ───────────────────────────────────────
-
-function AddModal({ lang, theme, onClose, onAdd }) {
-  // Оновлені поля згідно з макетом
-  const [form, setForm] = useState({
-    name: "",
-    managerId: "",
-    email: "",
-    domain: "",
-  });
-
-  const set = (e) =>
-    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
-
-  const submit = () => {
-    if (!form.name.trim() || !form.managerId.trim() || !form.email.trim())
-      return;
-
-    // Передаємо дані у таблицю (додаємо 0 співробітників за замовчуванням)
-    onAdd({
-      id: form.managerId,
-      name: form.name,
-      email: form.email,
-      employees: 0,
-      status: "active",
-    });
-    onClose();
-  };
-
-  return (
-    <div className="admin-modal-overlay" onClick={onClose}>
-      {/* e.stopPropagation() не дає закрити модалку при кліку на саму білу картку */}
-      <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
-        <h3 className="admin-modal__title">
-          {lang === "UA" ? "Реєстрація нової компанії" : "Register new company"}
-        </h3>
-
-        <div className="admin-modal__form">
-          <input
-            name="name"
-            value={form.name}
-            onChange={set}
-            type="text"
-            placeholder={lang === "UA" ? "Назва компанії" : "Company Name"}
-            className="admin-modal__input"
-          />
-
-          <input
-            name="managerId"
-            value={form.managerId}
-            onChange={set}
-            type="text"
-            placeholder={
-              lang === "UA" ? "ID Головного менеджера" : "Chief Manager ID"
-            }
-            className="admin-modal__input"
-          />
-
-          <input
-            name="email"
-            value={form.email}
-            onChange={set}
-            type="email"
-            placeholder={lang === "UA" ? "Контактний Email" : "Contact Email"}
-            className="admin-modal__input"
-          />
-
-          <input
-            name="domain"
-            value={form.domain}
-            onChange={set}
-            type="text"
-            placeholder={lang === "UA" ? "Домен компанії" : "Company Domain"}
-            className="admin-modal__input"
-          />
-
-          <span className="admin-modal__hint">
-            {lang === "UA"
-              ? "*наприклад: https://www.google.com/search?q=novatrans.com"
-              : "*e.g. https://www.google.com..."}
-          </span>
-        </div>
-
-        <button className="login-btn admin-modal__save" onClick={submit}>
-          {lang === "UA" ? "СТВОРИТИ КОМПАНІЮ" : "CREATE COMPANY"}
-        </button>
-
-        <div className="admin-modal__footer">
-          <div className="admin-modal__divider"></div>
-          <span className="admin-modal__secure">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-            End-to-end encrypted
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Statistics Page ───────────────────────────────────────────────────────────
-
-function StatisticsPage({ lang, companies }) {
-  // 1. Рахуємо реальні дані на основі масиву компаній
-  const totalCompanies = companies.length;
-  const activeCompanies = companies.filter((c) => c.status === "active").length;
-  const blockedCompanies = companies.filter(
-    (c) => c.status === "blocked",
-  ).length;
-
-  // Для демонстрації макета (інші цифри можна поки залишити статичними або теж вирахувати)
-  const activeOrders = "2.654";
-  const onlineEmployees = companies.reduce(
-    (sum, c) => sum + (c.employees || 0),
-    0,
-  );
-
-  return (
-    <div className="stats-container">
-      {/* Рядок з основними показниками за макетом */}
-      <div className="stats-main-pills">
-        <div className="stat-pill-item">
-          <span className="stat-label">
-            {lang === "UA" ? "Всього компаній" : "Total companies"}
-          </span>
-          <span className="stat-value">{totalCompanies}</span>
-        </div>
-        <div className="stat-pill-item">
-          <span className="stat-label">
-            {lang === "UA" ? "Активні" : "Active"}
-          </span>
-          <span className="stat-value" style={{ color: "#4ade80" }}>
-            {activeCompanies}
-          </span>
-        </div>
-        <div className="stat-pill-item">
-          <span className="stat-label">
-            {lang === "UA" ? "Заблоковані" : "Blocked"}
-          </span>
-          <span className="stat-value" style={{ color: "#f87171" }}>
-            {blockedCompanies}
-          </span>
-        </div>
-        <div className="stat-pill-item">
-          <span className="stat-label">
-            {lang === "UA" ? "Співробітники" : "Employees"}
-          </span>
-          <span className="stat-value">{onlineEmployees}</span>
-        </div>
-      </div>
-
-      <div className="stats-charts-grid">
-        <div className="chart-card">
-          <h3 className="chart-card-title">
-            {lang === "UA" ? "Динаміка замовлень" : "Order dynamics"}
-          </h3>
-          <div className="line-chart-placeholder">
-            <div className="fake-line-graph"></div>
-          </div>
-        </div>
-
-        <div className="stats-divider"></div>
-
-        <div className="chart-card">
-          <h3 className="chart-card-title">
-            {lang === "UA" ? "Розподіл ролей" : "Role distribution"}
-          </h3>
-          <div className="pie-chart-container">
-            <div
-              className="main-pie-chart"
-              style={{
-                /* Динамічно змінюємо градієнт залежно від відсотка активних компаній */
-                background: `conic-gradient(#4ade80 0% ${(activeCompanies / totalCompanies) * 100}%, #f87171 ${(activeCompanies / totalCompanies) * 100}% 100%)`,
-              }}
-            ></div>
-            <div className="pie-labels">
-              <div className="pie-label-item">Активні ({activeCompanies})</div>
-              <div className="pie-label-item">
-                Заблоковані ({blockedCompanies})
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Main page ─────────────────────────────────────────────────────────────────
-
 export default function AdminPage() {
   const { theme, toggleTheme, lang, toggleLang } = useApp();
   const [activeNav, setActiveNav] = useState("companies");
-  const [companies, setCompanies] = useState(INITIAL_COMPANIES);
+  const [companies, setCompanies] = useState(INITIAL);
   const [showModal, setShowModal] = useState(false);
-
-  const toggleStatus = (id) =>
-    setCompanies((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, status: c.status === "active" ? "blocked" : "active" }
-          : c,
-      ),
-    );
-
-  const addCompany = (company) => setCompanies((prev) => [...prev, company]);
 
   return (
     <div
       className={`admin-global-layout ${theme === "dark" ? "dark-theme" : ""}`}
     >
-      {/* ── Сайдбар ── */}
       <aside className="sidebar">
         <div className="brand-logo">
           <Link to="/">
             <img
               src={theme === "light" ? "/logo.svg" : "/logo.2.svg"}
-              alt="GreenRoad Logo"
+              alt="Logo"
             />
           </Link>
         </div>
-
         <nav className="nav-menu">
           {NAV.map(({ key, labelUA, labelEN, Icon }) => (
             <button
@@ -455,27 +359,19 @@ export default function AdminPage() {
               className={`nav-item ${activeNav === key ? "active" : ""}`}
               onClick={() => setActiveNav(key)}
             >
-              <Icon />
-              <span>{lang === "UA" ? labelUA : labelEN}</span>
+              <Icon /> <span>{lang === "UA" ? labelUA : labelEN}</span>
             </button>
           ))}
         </nav>
       </aside>
 
-      {/* ── Головна частина ── */}
       <main className="main-content">
-        {/* Шапка */}
         <header className="top-header">
-          <h1>
-            {lang === "UA"
-              ? "Панель Системного Адміністратора"
-              : "System Administrator Panel"}
-          </h1>
-
+          <h1>{lang === "UA" ? "Панель Адміністратора" : "Admin Panel"}</h1>
           <div className="top-controls">
             <div className="control-pill lang-switch" onClick={toggleLang}>
               <span className={lang === "UA" ? "active" : ""}>UA</span>
-              <span className="separator">|</span>
+              <span>|</span>
               <span className={lang === "EN" ? "active" : ""}>EN</span>
             </div>
             <div className="control-pill theme-switch" onClick={toggleTheme}>
@@ -493,130 +389,47 @@ export default function AdminPage() {
           </div>
         </header>
 
-        {/* ── Таблиця компаній ── */}
         {activeNav === "companies" && (
           <div>
             <div className="admin-content-header">
-              <h2
-                className="admin-page-title"
-                style={{
-                  fontSize: "24px",
-                  fontWeight: 600,
-                  color: "var(--text-primary)",
-                  margin: 0,
-                }}
-              >
-                {lang === "UA" ? "Керування компаніями" : "Company Management"}
+              <h2 className="admin-page-title">
+                {lang === "UA" ? "Керування компаніями" : "Companies"}
               </h2>
               <button
                 className="login-btn admin-add-btn"
                 onClick={() => setShowModal(true)}
               >
-                <IconPlus />
-                {lang === "UA" ? "ДОДАТИ КОМПАНІЮ" : "ADD COMPANY"}
+                <IconPlus /> {lang === "UA" ? "ДОДАТИ" : "ADD"}
               </button>
             </div>
-
             <div className="admin-table-wrap">
               <div className="admin-table-head">
-                {[
-                  lang === "UA" ? "Назва компанії" : "Company name",
-                  "ID",
-                  lang === "UA" ? "Email менеджера" : "Manager email",
-                  lang === "UA" ? "Співробітники" : "Employees",
-                  lang === "UA" ? "Статус" : "Status",
-                  lang === "UA" ? "Дія" : "Action",
-                ].map((h) => (
-                  <span key={h} className="admin-table-head__cell">
-                    {h}
-                  </span>
-                ))}
+                <span>{lang === "UA" ? "Назва" : "Name"}</span>
+                <span>ID</span>
+                <span>Email</span>
+                <span>{lang === "UA" ? "Співр." : "Emp."}</span>
+                <span>{lang === "UA" ? "Статус" : "Status"}</span>
+                <span>{lang === "UA" ? "Дія" : "Action"}</span>
               </div>
-
               {companies.map((c) => (
-                <CompanyRow
-                  key={c.id}
-                  company={c}
-                  lang={lang}
-                  onToggle={() => toggleStatus(c.id)}
-                />
+                <CompanyRow key={c.id} company={c} lang={lang} />
               ))}
-
-              {companies.length === 0 && (
-                <div className="admin-table-empty">
-                  {lang === "UA" ? "Немає компаній" : "No companies yet"}
-                </div>
-              )}
             </div>
           </div>
         )}
 
-        {/* ── Глобальна статистика ── */}
         {activeNav === "stats" && (
-          <div>
-            <div className="admin-content-header">
-              <h2 className="admin-page-title">
-                {lang === "UA" ? "Глобальна статистика" : "Global Statistics"}
-              </h2>
-            </div>
-
-            {/* Передаємо поточний стан компаній */}
-            <StatisticsPage lang={lang} companies={companies} />
-          </div>
-        )}
-
-        {/* Заглушка для налаштувань (бо їх ми ще не малювали) */}
-        {activeNav === "settings" && (
-          <div style={{ color: "var(--text-primary)" }}>
-            <h2 style={{ fontSize: "24px", fontWeight: 600 }}>
-              {lang === "UA"
-                ? "Налаштування в розробці"
-                : "Settings under development"}
-            </h2>
-          </div>
+          <StatisticsPage lang={lang} companies={companies} />
         )}
       </main>
 
-      {/* ── Модальне вікно ── */}
       {showModal && (
         <AddModal
           lang={lang}
-          theme={theme}
           onClose={() => setShowModal(false)}
-          onAdd={addCompany}
+          onAdd={(c) => setCompanies([...companies, c])}
         />
       )}
-    </div>
-  );
-}
-
-// ── Company row ───────────────────────────────────────────────────────────────
-
-function CompanyRow({ company, lang, onToggle }) {
-  const isActive = company.status === "active";
-  return (
-    <div className="admin-table-row">
-      <span className="admin-table-row__name">{company.name}</span>
-      <span className="admin-table-row__id">{company.id}</span>
-      <span className="admin-table-row__email">{company.email}</span>
-      <span className="admin-table-row__emp">{company.employees}</span>
-      <span
-        className={`admin-table-row__status ${isActive ? "admin-table-row__status--active" : "admin-table-row__status--blocked"}`}
-      >
-        {isActive
-          ? lang === "UA"
-            ? "Активна"
-            : "Active"
-          : lang === "UA"
-            ? "Заблокована"
-            : "Blocked"}
-      </span>
-      <div className="admin-table-row__action">
-        <button className="admin-enter-btn" onClick={onToggle}>
-          <IconEnter />
-          {lang === "UA" ? "Увійти" : "Enter"}
-        </button>
-      </div>
     </div>
   );
 }
