@@ -14,24 +14,15 @@ function MoonIcon() {
     </svg>
   );
 }
-
 function SunIcon() {
   return (
     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor"
       strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1" x2="12" y2="3" />
-      <line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1" y1="12" x2="3" y2="12" />
-      <line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+      <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
     </svg>
   );
 }
-
 function IconCompanies() {
   return (
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
@@ -43,7 +34,6 @@ function IconCompanies() {
     </svg>
   );
 }
-
 function IconStats() {
   return (
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
@@ -53,7 +43,6 @@ function IconStats() {
     </svg>
   );
 }
-
 function IconSettings() {
   return (
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
@@ -63,7 +52,6 @@ function IconSettings() {
     </svg>
   );
 }
-
 function IconLogout() {
   return (
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
@@ -74,7 +62,6 @@ function IconLogout() {
     </svg>
   );
 }
-
 function IconEnter() {
   return (
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
@@ -85,7 +72,6 @@ function IconEnter() {
     </svg>
   );
 }
-
 function IconPlus() {
   return (
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
@@ -140,12 +126,11 @@ function AddModal({ lang, onClose, onAdd }) {
       setLoading(false);
     }
   };
-
   return (
     <div className="admin-modal-overlay" onClick={onClose}>
       <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
         <h3 className="admin-modal__title">
-          {lang === "UA" ? "Реєстрація нової компанії" : "Register new company"}
+          {lang === "UA" ? "Реєстрація нової компанії" : "Register company"}
         </h3>
 
         {error && <p className="form-error">{error}</p>}
@@ -371,7 +356,6 @@ export default function AdminPage() {
             <img src={theme === "light" ? "/logo.svg" : "/logo.2.svg"} alt="GreenRoad Logo" />
           </Link>
         </div>
-
         <nav className="nav-menu">
           {NAV.map(({ key, labelUA, labelEN, Icon }) => (
             <button
@@ -379,8 +363,7 @@ export default function AdminPage() {
               className={`nav-item ${activeNav === key ? "active" : ""}`}
               onClick={() => handleNavClick(key)}
             >
-              <Icon />
-              <span>{lang === "UA" ? labelUA : labelEN}</span>
+              <Icon /> <span>{lang === "UA" ? labelUA : labelEN}</span>
             </button>
           ))}
         </nav>
@@ -395,7 +378,7 @@ export default function AdminPage() {
           <div className="top-controls">
             <div className="control-pill lang-switch" onClick={toggleLang}>
               <span className={lang === "UA" ? "active" : ""}>UA</span>
-              <span className="separator">|</span>
+              <span>|</span>
               <span className={lang === "EN" ? "active" : ""}>EN</span>
             </div>
             <div className="control-pill theme-switch" onClick={toggleTheme}>
@@ -417,7 +400,6 @@ export default function AdminPage() {
                 {lang === "UA" ? "ДОДАТИ КОМПАНІЮ" : "ADD COMPANY"}
               </button>
             </div>
-
             <div className="admin-table-wrap">
               <div className="admin-table-head">
                 {[
@@ -431,7 +413,6 @@ export default function AdminPage() {
                   <span key={h} className="admin-table-head__cell">{h}</span>
                 ))}
               </div>
-
               {companies.map((c) => (
                 <CompanyRow
                   key={c.id}
@@ -441,12 +422,6 @@ export default function AdminPage() {
                   onAddEmployee={() => setEmployeeModal(c.id)}
                 />
               ))}
-
-              {companies.length === 0 && (
-                <div className="admin-table-empty">
-                  {lang === "UA" ? "Немає компаній" : "No companies yet"}
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -478,7 +453,7 @@ export default function AdminPage() {
         <AddModal
           lang={lang}
           onClose={() => setShowModal(false)}
-          onAdd={addCompany}
+          onAdd={(c) => setCompanies([...companies, c])}
         />
       )}
 
