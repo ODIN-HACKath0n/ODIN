@@ -1,12 +1,14 @@
 from fastapi import FastAPI, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
-from sqlalchemy.orm import Session
-from sqlalchemy import text  # Для виконання сирих SQL-запитів
 
-from database.session import get_db
 from auth.router import router as auth_router
-from api.routers import directors, dispatchers, drivers, warehouses, companies, clients, managers
+from api.routers import directors, dispatchers, drivers, warehouses, companies, clients, managers, request
+
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 app = FastAPI(title="Hackaton API", version="1.0")
 
@@ -33,6 +35,7 @@ app.include_router(drivers.router)
 app.include_router(companies.router)
 app.include_router(clients.router)
 app.include_router(managers.router)
+app.include_router(request.router)
 
 @app.get("/api/status", status_code=status.HTTP_200_OK, tags=["Status"])
 def get_status():
