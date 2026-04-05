@@ -6,7 +6,7 @@ from sqlalchemy import text  # Для виконання сирих SQL-запи
 
 from database.session import get_db
 from auth.router import router as auth_router
-from api.routers import directors, dispatchers, drivers, requests, warehouses, companies
+from api.routers import directors, dispatchers, drivers, warehouses, companies, clients
 
 app = FastAPI(title="Hackaton API", version="1.0")
 
@@ -27,24 +27,15 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(directors.router)
-app.include_router(dispatchers.router)
+# app.include_router(dispatchers.router)
 app.include_router(drivers.router)
-app.include_router(requests.router)
-app.include_router(warehouses.router)
+# app.include_router(warehouses.router)
 app.include_router(companies.router)
+app.include_router(clients.router)
 
-@app.get("/api/status", status_code=status.HTTP_200_OK, tags=["Статус"])
+@app.get("/api/status", status_code=status.HTTP_200_OK, tags=["Status"])
 def get_status():
     return {
         "status": "ok",
         "timestamp": datetime.now().isoformat()
     }
-
-@app.get("/test-db")
-def test_database_connection(db: Session = Depends(get_db)):
-    try:
-        result = db.execute(text("SELECT 1")).scalar()
-        if result == 1:
-            return {"status": "success", "message": "Підключення до PostgreSQL успішне! 🚀"}
-    except Exception as e:
-        return {"status": "error", "message": f"Помилка підключення: {str(e)}"}

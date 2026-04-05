@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from database.schemas import OrderCreate, OrderStatus
 from database.models import Order
-from crud.clients import get_client_by_email, create_client_in_db
+from crud.client import get_client_by_email, create_client_in_db
 
 
 async def get_order_by_id(

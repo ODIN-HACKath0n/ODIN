@@ -72,7 +72,12 @@ async def register_employee(
     return {"message": "Create employee successfully", "user_data": user_db}
 
 @router.get("/employee", status_code=status.HTTP_200_OK)
-async def get_employee(company_id: uuid.UUID, email: str, db: AsyncSession = Depends(get_db)):
+async def get_employee(
+        company_id: uuid.UUID,
+        email: str,
+        db: AsyncSession = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+):
     user_db = await get_user_by_email_and_company(db, email=email, company_id=company_id)
     if isinstance(user_db, HTTPException):
         raise user_db

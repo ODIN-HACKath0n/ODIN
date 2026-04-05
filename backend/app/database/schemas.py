@@ -62,14 +62,6 @@ class LocationCoords(BaseModel):
     lon: float = Field(ge=-180.0, le=180.0)
 
 # --- СХЕМИ КЛІЄНТІВ ---
-class BaseClient(BaseModel):
-    client_id: uuid.UUID
-    company_id: uuid.UUID
-    company_name: str
-    contact_person: str
-    phone: str
-    billing_address: str
-
 class ClientCreate(BaseModel):
     company_id: uuid.UUID
     company_name: str
@@ -77,6 +69,20 @@ class ClientCreate(BaseModel):
     phone: str
     email: str | EmailStr
     billing_address: str
+
+class ClientResponse(BaseModel):
+    client_id: uuid.UUID
+    company_id: uuid.UUID
+    company_name: str
+    contact_person: str
+    phone: str
+    billing_address: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ClientDataResponse(BaseModel):
+    message: str
+    order_data: ClientResponse
 
 # --- СХЕМИ ЗАМОВЛЕНЬ ---
 class OrderCreate(BaseModel):
